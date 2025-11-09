@@ -1308,15 +1308,6 @@ function SafeUILib:AddTab(tabName)
 		self.Scroll = scrollFrame
 	end
 
-	-- 建立分頁導航列
-	if not self.TabBar then
-		local tabBar = Instance.new("Frame")
-		tabBar.Name = "TabBar"
-		tabBar.Size = UDim2.new(1, 0, 0, 36)
-		tabBar.BackgroundColor3 = Color3.fromRGB(25, 28, 38)
-		tabBar.BorderSizePixel = 0
-		tabBar.Parent = self.ContentCard or parentFrame
-
 		Instance.new("UICorner", tabBar).CornerRadius = UDim.new(0, 8)
 
 		local stroke = Instance.new("UIStroke", tabBar)
