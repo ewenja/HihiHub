@@ -588,7 +588,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	paletteHolder.BorderSizePixel = 0
 	paletteHolder.Visible = false
 	paletteHolder.ZIndex = 100
-	paletteHolder.Parent = parent
+	paletteHolder.Parent = game:GetService("CoreGui")
 
 	local palette = Instance.new("Frame")
 	palette.Size = UDim2.new(0, 200, 0, 130)
