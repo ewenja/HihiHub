@@ -1045,8 +1045,8 @@ colorBox.MouseButton1Click:Connect(function()
 		RunService.RenderStepped:Wait()
 		task.defer(function()
 			local pos = colorBox.AbsolutePosition
-			local px = math.clamp(pos.X + colorBox.AbsoluteSize.X + 10, 0, screenSize.X - 240)
-			local py = math.clamp(pos.Y + 5, 0, screenSize.Y - 200)
+			local px = math.clamp(pos.X + colorBox.AbsoluteSize.X + 10, 0, screenSize.X - 400)
+			local py = math.clamp(pos.Y + 5, 0, screenSize.Y - 400)
 
 			picker.Visible = true
 			picker.Size = UDim2.new(0, 220, 0, 0)
