@@ -1,0 +1,1568 @@
+--bypass HihiHub Gui
+local SafeUILib = {}
+SafeUILib.__index = SafeUILib
+
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+function SafeUILib:CreateWindow(opts)
+	opts = opts or {}
+
+	-- 主題（之後要全局用可以移到外面成為 SafeUILib.Theme）
+	local Theme = {
+		Bg = Color3.fromRGB(12, 14, 20),
+		Card = Color3.fromRGB(18, 22, 30),
+		Sidebar = Color3.fromRGB(22, 30, 43),
+		Accent = Color3.fromRGB(24, 115, 235),
+		Text = Color3.fromRGB(228, 235, 245),
+		SubText = Color3.fromRGB(156, 170, 183),
+		Border = Color3.fromRGB(35, 45, 60),
+		Line = Color3.fromRGB(28, 36, 50)
+	}
+
+	local toggleKeys = opts.ToggleKeys or { Enum.KeyCode.RightControl, Enum.KeyCode.Insert }
+	local windowName = opts.Name or ("HihiHub_" .. math.random(10000, 99999))
+	local windowSize = opts.Size or UDim2.fromOffset(720, 480)
+
+	-- ScreenGui
+	local gui = Instance.new("ScreenGui")
+	gui.Name = windowName
+	gui.DisplayOrder = 999999
+	gui.IgnoreGuiInset = true
+	gui.ResetOnSpawn = false
+	gui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
+
+	-- Root（主容器）
+	local root = Instance.new("Frame")
+	root.Name = "NL_Root"
+	root.Size = windowSize
+	root.Position = UDim2.fromScale(0.5, 0.5)
+	root.AnchorPoint = Vector2.new(0.5, 0.5)
+	root.BackgroundColor3 = Theme.Bg
+	root.BorderSizePixel = 0
+	root.Parent = gui
+
+	-- 圓角 + 邊框線
+	Instance.new("UICorner", root).CornerRadius = UDim.new(0, 6)
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1
+	stroke.Color = Theme.Border
+	stroke.Transparency = 0.4
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = root
+
+	-- 柔和陰影
+	local shadow = Instance.new("ImageLabel")
+	shadow.Name = "DropShadow"
+	shadow.BackgroundTransparency = 1
+	shadow.Image = "rbxassetid://1316045217"
+	shadow.ScaleType = Enum.ScaleType.Slice
+	shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+	shadow.Size = UDim2.new(1, 20, 1, 20)
+	shadow.Position = UDim2.fromOffset(-10, -6)
+	shadow.ImageTransparency = 0.7
+	shadow.ZIndex = 0
+	shadow.Parent = root
+
+	-- TopBar
+	local topbar = Instance.new("Frame")
+	topbar.Name = "TopBar"
+	topbar.BackgroundColor3 = Theme.Bg
+	topbar.BorderSizePixel = 0
+	topbar.Size = UDim2.new(1, 0, 0, 46)
+	topbar.Parent = root
+
+	local title = Instance.new("TextLabel")
+	title.Name = "Title"
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.new(1, -24, 1, 0)
+	title.Position = UDim2.fromOffset(12, 0)
+	title.Font = Enum.Font.GothamSemibold
+	title.Text = opts.Name or "Window"
+	title.TextSize = 20
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.TextColor3 = Theme.Text
+	title.Parent = topbar
+
+	local topLine = Instance.new("Frame")
+	topLine.BackgroundColor3 = Theme.Line
+	topLine.BorderSizePixel = 0
+	topLine.Size = UDim2.new(1, -24, 0, 1)
+	topLine.Position = UDim2.new(0, 12, 1, -1)
+	topLine.Parent = topbar
+
+	-- Sidebar（左側）
+	local sidebar = Instance.new("Frame")
+	sidebar.Name = "Sidebar"
+	sidebar.BackgroundColor3 = Theme.Sidebar
+	sidebar.BorderSizePixel = 0
+	sidebar.Position = UDim2.fromOffset(0, 46)
+	sidebar.Size = UDim2.new(0, 200, 1, -46)
+	sidebar.Parent = root
+	Instance.new("UICorner", sidebar).CornerRadius = UDim.new(0, 6)
+
+	local sbStroke = Instance.new("UIStroke")
+	sbStroke.Thickness = 1
+	sbStroke.Color = Theme.Border
+	sbStroke.Transparency = 0.45
+	sbStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	sbStroke.Parent = sidebar
+
+	-- Sidebar 內容容器（之後 AddTab 會加按鈕進來）
+	local sbContainer = Instance.new("ScrollingFrame")
+	sbContainer.Name = "Container"
+	sbContainer.BackgroundTransparency = 1
+	sbContainer.BorderSizePixel = 0
+	sbContainer.Size = UDim2.new(1, 0, 1, -8)
+	sbContainer.Position = UDim2.fromOffset(0, 8)
+	sbContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+	sbContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	sbContainer.ScrollBarThickness = 3
+	sbContainer.Parent = sidebar
+
+	local sbList = Instance.new("UIListLayout")
+	sbList.Padding = UDim.new(0, 6)
+	sbList.SortOrder = Enum.SortOrder.LayoutOrder
+	sbList.Parent = sbContainer
+
+	-- Content（右側內容區）
+	local contentCard = Instance.new("Frame")
+	contentCard.Name = "ContentCard"
+	contentCard.BackgroundColor3 = Theme.Card
+	contentCard.BorderSizePixel = 0
+	contentCard.Position = UDim2.fromOffset(212, 58)
+	contentCard.Size = UDim2.new(1, -224, 1, -70)
+	contentCard.Parent = root
+	Instance.new("UICorner", contentCard).CornerRadius = UDim.new(0, 6)
+
+	local ccStroke = Instance.new("UIStroke")
+	ccStroke.Thickness = 1
+	ccStroke.Color = Theme.Border
+	ccStroke.Transparency = 0.5
+	ccStroke.Parent = contentCard
+
+	-- 內容滾動區（為了與你原本 API 相容：self.Frame 指向這個 ScrollingFrame）
+	local scroll = Instance.new("ScrollingFrame")
+	scroll.Name = "ContentScroll"
+	scroll.BackgroundTransparency = 1
+	scroll.Size = UDim2.new(1, -24, 1, -24)
+	scroll.Position = UDim2.fromOffset(12, 12)
+	scroll.ScrollBarThickness = 4
+	scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	scroll.Parent = contentCard
+
+	local contentList = Instance.new("UIListLayout")
+	contentList.Padding = UDim.new(0, 10)
+	contentList.SortOrder = Enum.SortOrder.LayoutOrder
+	contentList.Parent = scroll
+
+	-- 拖曳（整個 root 可拖）
+	local dragging, dragStart, startPos = false
+	topbar.InputBegan:Connect(function(inputObj)
+		if inputObj.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = inputObj.Position
+			startPos = root.Position
+			inputObj.Changed:Connect(function()
+				if inputObj.UserInputState == Enum.UserInputState.End then dragging = false end
+			end)
+		end
+	end)
+	UIS.InputChanged:Connect(function(inputObj)
+		if dragging and inputObj.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = inputObj.Position - dragStart
+			root.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+
+	-- 顯示/隱藏
+	gui.Enabled = true
+	UIS.InputBegan:Connect(function(inputObj, gpe)
+		if not gpe and table.find(toggleKeys, inputObj.KeyCode) then
+			gui.Enabled = not gui.Enabled
+		end
+	end)
+
+	-- 回傳（保持與你原本 API 相容）
+	local self = setmetatable({
+		Gui = gui,
+		Root = root,          -- 新增：主容器
+		TopBar = topbar,      -- 新增：標題列
+		Sidebar = sbContainer,-- 新增：左側容器（給 AddTab 用）
+		ContentCard = contentCard,
+		Scroll = scroll,      -- 內容滾動區
+		Frame = scroll,       -- 和舊 API 相容：元件都塞到這裡
+		Tabs = {},
+		Buttons = {},
+		NextY = 10
+	}, SafeUILib)
+
+	return self
+end
+
+function SafeUILib:AddButton(text, callback)
+	self.Buttons = self.Buttons or {}
+	local name = "btn_" .. math.random(100000, 999999)
+	local parent = self:GetParentFrame()
+
+	-- 主題顏色（和 CreateWindow 一致）
+	local Theme = {
+		Primary = Color3.fromRGB(24, 115, 235),
+		Surface = Color3.fromRGB(28, 34, 45),
+		Hover = Color3.fromRGB(38, 44, 60),
+		Text = Color3.fromRGB(228, 235, 245),
+		Border = Color3.fromRGB(40, 50, 70)
+	}
+
+	-- 建立按鈕主體
+	local button = Instance.new("TextButton")
+	button.Name = name
+	button.Size = UDim2.new(1, -24, 0, 36)
+	button.Position = UDim2.new(0, 12, 0, self.NextY)
+	button.BackgroundColor3 = Theme.Surface
+	button.Text = text or "Button"
+	button.TextColor3 = Theme.Text
+	button.Font = Enum.Font.GothamSemibold
+	button.TextSize = 15
+	button.AutoButtonColor = false
+	button.Parent = parent
+	button.ClipsDescendants = true
+
+	-- 圓角
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = button
+
+	-- 邊框線
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1
+	stroke.Color = Theme.Border
+	stroke.Transparency = 0.35
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = button
+
+	-- 按下動畫亮條
+	local ripple = Instance.new("Frame")
+	ripple.Name = "Ripple"
+	ripple.BackgroundColor3 = Theme.Primary
+	ripple.BackgroundTransparency = 1
+	ripple.Size = UDim2.new(0, 0, 1, 0)
+	ripple.Position = UDim2.new(0.5, 0, 0, 0)
+	ripple.AnchorPoint = Vector2.new(0.5, 0)
+	ripple.ZIndex = 2
+	ripple.Parent = button
+
+	-- Hover 動畫
+	button.MouseEnter:Connect(function()
+		TweenService:Create(button, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+			BackgroundColor3 = Theme.Hover
+		}):Play()
+	end)
+
+	button.MouseLeave:Connect(function()
+		TweenService:Create(button, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+			BackgroundColor3 = Theme.Surface
+		}):Play()
+	end)
+
+	-- 點擊動畫 + Callback
+	button.MouseButton1Click:Connect(function()
+		TweenService:Create(ripple, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+			BackgroundTransparency = 0.4,
+			Size = UDim2.new(1.5, 0, 1.5, 0)
+		}):Play()
+		task.delay(0.25, function()
+			ripple.Size = UDim2.new(0, 0, 1, 0)
+			ripple.BackgroundTransparency = 1
+		end)
+		if callback then pcall(callback) end
+	end)
+
+	table.insert(self.Buttons, button)
+	self.NextY = self.NextY + 44
+	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
+end
+
+function SafeUILib:AddDropdown(title, options, defaultIndex, callback)
+	self.Buttons = self.Buttons or {}
+	local parent = self:GetParentFrame()
+
+	-- 主題配色
+	local Theme = {
+		Surface = Color3.fromRGB(28, 34, 45),
+		Hover = Color3.fromRGB(38, 44, 60),
+		Accent = Color3.fromRGB(24, 115, 235),
+		Text = Color3.fromRGB(228, 235, 245),
+		Border = Color3.fromRGB(40, 50, 70)
+	}
+
+	local selectedIndex = defaultIndex or 1
+	local selectedText = options[selectedIndex] or "Select"
+
+	-- 外框容器
+	local container = Instance.new("Frame")
+	container.Name = "dropdown_" .. math.random(100000, 999999)
+	container.Size = UDim2.new(1, -24, 0, 38)
+	container.Position = UDim2.new(0, 12, 0, self.NextY)
+	container.BackgroundColor3 = Theme.Surface
+	container.ClipsDescendants = true
+	container.Parent = parent
+	Instance.new("UICorner", container).CornerRadius = UDim.new(0, 8)
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1
+	stroke.Color = Theme.Border
+	stroke.Transparency = 0.4
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = container
+
+	-- 標題與選取文字
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Text = string.format("%s: %s", title, selectedText)
+	label.Font = Enum.Font.Gotham
+	label.TextColor3 = Theme.Text
+	label.TextSize = 15
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Position = UDim2.fromOffset(10, 0)
+	label.Size = UDim2.new(1, -30, 1, 0)
+	label.Parent = container
+
+	-- 下箭頭圖示
+	local arrow = Instance.new("ImageLabel")
+	arrow.Image = "rbxassetid://7072718282"
+	arrow.AnchorPoint = Vector2.new(1, 0.5)
+	arrow.Position = UDim2.new(1, -10, 0.5, 0)
+	arrow.BackgroundTransparency = 1
+	arrow.Size = UDim2.fromOffset(16, 16)
+	arrow.ImageColor3 = Theme.Text
+	arrow.Rotation = 0
+	arrow.Parent = container
+
+	-- 展開內容框
+	local dropdownFrame = Instance.new("Frame")
+	dropdownFrame.Name = "DropdownList"
+	dropdownFrame.Size = UDim2.new(1, 0, 0, 0)
+	dropdownFrame.Position = UDim2.fromOffset(0, 38)
+	dropdownFrame.BackgroundColor3 = Theme.Surface
+	dropdownFrame.BorderSizePixel = 0
+	dropdownFrame.Visible = false
+	dropdownFrame.ClipsDescendants = true
+	dropdownFrame.Parent = container
+	Instance.new("UICorner", dropdownFrame).CornerRadius = UDim.new(0, 8)
+
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 4)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = dropdownFrame
+
+	-- 選項生成
+	local optionButtons = {}
+	for i, opt in ipairs(options) do
+		local optBtn = Instance.new("TextButton")
+		optBtn.Name = "opt_" .. tostring(i)
+		optBtn.Size = UDim2.new(1, -12, 0, 30)
+		optBtn.Position = UDim2.new(0, 6, 0, 0)
+		optBtn.BackgroundColor3 = Theme.Surface
+		optBtn.Text = opt
+		optBtn.TextColor3 = Theme.Text
+		optBtn.Font = Enum.Font.Gotham
+		optBtn.TextSize = 14
+		optBtn.AutoButtonColor = false
+		optBtn.Parent = dropdownFrame
+
+		local btnCorner = Instance.new("UICorner", optBtn)
+		btnCorner.CornerRadius = UDim.new(0, 6)
+
+		optBtn.MouseEnter:Connect(function()
+			TweenService:Create(optBtn, TweenInfo.new(0.15), {
+				BackgroundColor3 = Theme.Hover
+			}):Play()
+		end)
+		optBtn.MouseLeave:Connect(function()
+			TweenService:Create(optBtn, TweenInfo.new(0.15), {
+				BackgroundColor3 = Theme.Surface
+			}):Play()
+		end)
+		optBtn.MouseButton1Click:Connect(function()
+			selectedIndex = i
+			selectedText = opt
+			label.Text = string.format("%s: %s", title, opt)
+			TweenService:Create(dropdownFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+				Size = UDim2.new(1, 0, 0, 0)
+			}):Play()
+			task.wait(0.25)
+			dropdownFrame.Visible = false
+			TweenService:Create(arrow, TweenInfo.new(0.25), {Rotation = 0}):Play()
+			if callback then pcall(callback, opt) end
+		end)
+
+		table.insert(optionButtons, optBtn)
+	end
+
+	local isOpen = false
+	container.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			isOpen = not isOpen
+			if isOpen then
+				dropdownFrame.Visible = true
+				local targetHeight = (#options * 34)
+				TweenService:Create(dropdownFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+					Size = UDim2.new(1, 0, 0, targetHeight)
+				}):Play()
+				TweenService:Create(arrow, TweenInfo.new(0.25), {Rotation = 180}):Play()
+			else
+				TweenService:Create(dropdownFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+					Size = UDim2.new(1, 0, 0, 0)
+				}):Play()
+				task.delay(0.25, function()
+					dropdownFrame.Visible = false
+				end)
+				TweenService:Create(arrow, TweenInfo.new(0.25), {Rotation = 0}):Play()
+			end
+		end
+	end)
+
+	self.NextY = self.NextY + 50
+	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
+end
+function SafeUILib:AddColorPicker(label, defaultColor, callback)
+	self.Buttons = self.Buttons or {}
+	local parent = self:GetParentFrame()
+	local currentColor = defaultColor or Color3.fromRGB(255, 255, 255)
+
+	local Theme = {
+		Surface = Color3.fromRGB(28, 34, 45),
+		Fill = Color3.fromRGB(38, 44, 60),
+		Text = Color3.fromRGB(228, 235, 245),
+		Accent = Color3.fromRGB(24, 115, 235),
+		Border = Color3.fromRGB(40, 50, 70)
+	}
+
+	-- 標題區
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Text = label or "Color"
+	title.Font = Enum.Font.Gotham
+	title.TextSize = 15
+	title.TextColor3 = Theme.Text
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Size = UDim2.new(1, -24, 0, 24)
+	title.Position = UDim2.new(0, 12, 0, self.NextY)
+	title.Parent = parent
+	self.NextY += 26
+
+	-- 預覽方塊
+	local preview = Instance.new("Frame")
+	preview.Size = UDim2.new(0, 34, 0, 20)
+	preview.Position = UDim2.new(1, -46, 0, self.NextY - 22)
+	preview.AnchorPoint = Vector2.new(0, 0)
+	preview.BackgroundColor3 = currentColor
+	preview.BorderSizePixel = 0
+	preview.Parent = parent
+	Instance.new("UICorner", preview).CornerRadius = UDim.new(0, 6)
+
+	local pStroke = Instance.new("UIStroke")
+	pStroke.Thickness = 1
+	pStroke.Color = Theme.Border
+	pStroke.Transparency = 0.35
+	pStroke.Parent = preview
+
+	-- 滑桿容器
+	local function makeSlider(name, startValue, color)
+		local container = Instance.new("Frame")
+		container.Name = "RGB_" .. name
+		container.Size = UDim2.new(1, -24, 0, 18)
+		container.Position = UDim2.new(0, 12, 0, self.NextY)
+		container.BackgroundTransparency = 1
+		container.Parent = parent
+
+		local bar = Instance.new("Frame")
+		bar.Size = UDim2.new(1, 0, 0, 6)
+		bar.Position = UDim2.new(0, 0, 0.5, -3)
+		bar.BackgroundColor3 = Theme.Fill
+		bar.BorderSizePixel = 0
+		bar.Parent = container
+		Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 3)
+
+		local fill = Instance.new("Frame")
+		fill.Size = UDim2.new(startValue, 0, 1, 0)
+		fill.BackgroundColor3 = color
+		fill.BorderSizePixel = 0
+		fill.Parent = bar
+		Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 3)
+
+		local dragging = false
+
+		bar.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = true
+			end
+		end)
+
+		UIS.InputChanged:Connect(function(input)
+			if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+				local percent = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+				fill.Size = UDim2.new(percent, 0, 1, 0)
+
+				if name == "R" then
+					currentColor = Color3.new(percent, currentColor.G, currentColor.B)
+				elseif name == "G" then
+					currentColor = Color3.new(currentColor.R, percent, currentColor.B)
+				elseif name == "B" then
+					currentColor = Color3.new(currentColor.R, currentColor.G, percent)
+				end
+
+				preview.BackgroundColor3 = currentColor
+				if callback then pcall(callback, currentColor) end
+			end
+		end)
+
+		UIS.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = false
+			end
+		end)
+
+		self.NextY += 22
+	end
+
+	-- 三條滑桿
+	makeSlider("R", currentColor.R, Color3.fromRGB(255, 50, 50))
+	makeSlider("G", currentColor.G, Color3.fromRGB(50, 255, 50))
+	makeSlider("B", currentColor.B, Color3.fromRGB(50, 50, 255))
+
+	self.NextY += 10
+	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
+end
+
+function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
+	self.Buttons = self.Buttons or {}
+	local parent = self:GetParentFrame()
+	local currentColor = defaultColor or Color3.fromRGB(255, 0, 0)
+
+	local Theme = {
+		Text = Color3.fromRGB(228, 235, 245),
+		Surface = Color3.fromRGB(28, 34, 45),
+		Hover = Color3.fromRGB(38, 44, 60),
+		Border = Color3.fromRGB(40, 50, 70),
+		Shadow = Color3.fromRGB(10, 10, 15)
+	}
+
+	-- 標題
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Text = label or "Color Picker"
+	title.Font = Enum.Font.Gotham
+	title.TextSize = 15
+	title.TextColor3 = Theme.Text
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Size = UDim2.new(1, -24, 0, 24)
+	title.Position = UDim2.new(0, 12, 0, self.NextY)
+	title.Parent = parent
+	self.NextY += 26
+
+	-- 小顏色按鈕（點擊展開）
+	local toggleButton = Instance.new("TextButton")
+	toggleButton.Size = UDim2.new(0, 40, 0, 20)
+	toggleButton.Position = UDim2.new(0, 12, 0, self.NextY)
+	toggleButton.BackgroundColor3 = currentColor
+	toggleButton.Text = ""
+	toggleButton.BorderSizePixel = 0
+	toggleButton.AutoButtonColor = false
+	toggleButton.Parent = parent
+	Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 5)
+	self.NextY += 34
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1
+	stroke.Color = Theme.Border
+	stroke.Transparency = 0.35
+	stroke.Parent = toggleButton
+
+	-- 浮動色盤
+	local paletteHolder = Instance.new("Frame")
+	paletteHolder.Size = UDim2.new(0, 200, 0, 0)
+	paletteHolder.Position = UDim2.new(0, 12, 0, self.NextY)
+	paletteHolder.BackgroundTransparency = 1
+	paletteHolder.BorderSizePixel = 0
+	paletteHolder.Visible = false
+	paletteHolder.ZIndex = 100
+	paletteHolder.Parent = parent
+
+	local palette = Instance.new("Frame")
+	palette.Size = UDim2.new(0, 200, 0, 130)
+	palette.BackgroundColor3 = Theme.Surface
+	palette.BorderSizePixel = 0
+	palette.ClipsDescendants = true
+	palette.ZIndex = 101
+	palette.Parent = paletteHolder
+	Instance.new("UICorner", palette).CornerRadius = UDim.new(0, 8)
+
+	local pStroke = Instance.new("UIStroke")
+	pStroke.Color = Theme.Border
+	pStroke.Transparency = 0.35
+	pStroke.Parent = palette
+
+	local shadow = Instance.new("ImageLabel")
+	shadow.BackgroundTransparency = 1
+	shadow.Image = "rbxassetid://1316045217"
+	shadow.ScaleType = Enum.ScaleType.Slice
+	shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+	shadow.Size = UDim2.new(1, 20, 1, 20)
+	shadow.Position = UDim2.fromOffset(-10, -6)
+	shadow.ImageTransparency = 0.7
+	shadow.ZIndex = 99
+	shadow.Parent = paletteHolder
+
+	-- 顏色漸層
+	local hue = Instance.new("Frame")
+	hue.Size = UDim2.new(1, 0, 1, 0)
+	hue.BorderSizePixel = 0
+	hue.ClipsDescendants = true
+	hue.Parent = palette
+	local hueGradient = Instance.new("UIGradient")
+	hueGradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+		ColorSequenceKeypoint.new(0.16, Color3.fromRGB(255, 255, 0)),
+		ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+		ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
+		ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 0, 255)),
+		ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+		ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
+	}
+	hueGradient.Parent = hue
+
+	local overlay = Instance.new("Frame")
+	overlay.Size = UDim2.new(1, 0, 1, 0)
+	overlay.BackgroundColor3 = Color3.new(1, 1, 1)
+	overlay.BackgroundTransparency = 1
+	overlay.BorderSizePixel = 0
+	overlay.Parent = hue
+
+	local light = Instance.new("UIGradient")
+	light.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+	}
+	light.Rotation = 90
+	light.Parent = overlay
+
+	local dot = Instance.new("Frame")
+	dot.Size = UDim2.new(0, 8, 0, 8)
+	dot.AnchorPoint = Vector2.new(0.5, 0.5)
+	dot.Position = UDim2.new(0.5, 0, 0.5, 0)
+	dot.BackgroundColor3 = Color3.new(1, 1, 1)
+	dot.BorderColor3 = Color3.new(0, 0, 0)
+	dot.BorderSizePixel = 1
+	dot.ZIndex = 102
+	dot.Parent = hue
+	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+
+	-- 更新顏色函式
+	local function updateColor(pos)
+		local x = math.clamp((pos.X - hue.AbsolutePosition.X) / hue.AbsoluteSize.X, 0, 1)
+		local y = math.clamp((pos.Y - hue.AbsolutePosition.Y) / hue.AbsoluteSize.Y, 0, 1)
+		currentColor = Color3.fromHSV(x, 1, 1 - y)
+		toggleButton.BackgroundColor3 = currentColor
+		dot.Position = UDim2.new(x, 0, y, 0)
+		if callback then pcall(callback, currentColor) end
+	end
+
+	-- 展開 / 收合
+	local isOpen = false
+	toggleButton.MouseButton1Click:Connect(function()
+		isOpen = not isOpen
+		if isOpen then
+			paletteHolder.Visible = true
+			TweenService:Create(paletteHolder, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+				Size = UDim2.new(0, 200, 0, 130),
+				BackgroundTransparency = 0
+			}):Play()
+		else
+			TweenService:Create(paletteHolder, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+				Size = UDim2.new(0, 200, 0, 0)
+			}):Play()
+			task.delay(0.25, function()
+				paletteHolder.Visible = false
+			end)
+		end
+	end)
+
+	-- 拖曳取色
+	local dragging = false
+	hue.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			updateColor(input.Position)
+		end
+	end)
+	UIS.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			updateColor(input.Position)
+		end
+	end)
+	UIS.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+
+	self.NextY += 12
+	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
+end
+
+function SafeUILib:AddCustomButton(opts)
+	self.Buttons = self.Buttons or {}
+	local parent = self:GetParentFrame()
+
+	local text = opts.Text or "Custom"
+	local callback = opts.Callback
+	local color = opts.Color or Color3.fromRGB(28, 34, 45)
+	local hoverColor = opts.HoverColor or Color3.fromRGB(38, 44, 60)
+	local activeColor = opts.ActiveColor or Color3.fromRGB(48, 54, 70)
+	local textColor = opts.TextColor or Color3.fromRGB(228, 235, 245)
+	local font = opts.Font or Enum.Font.GothamSemibold
+	local textSize = opts.TextSize or 15
+	local cornerRadius = opts.CornerRadius or 8
+	local transparency = opts.BackgroundTransparency or 0
+	local textTransparency = opts.TextTransparency or 0
+	local borderColor = opts.BorderColor or Color3.fromRGB(40, 50, 70)
+	local alignment = opts.TextXAlignment or Enum.TextXAlignment.Center
+
+	local name = "cb_" .. math.random(100000, 999999)
+	local button = Instance.new("TextButton")
+	button.Name = name
+	button.Size = UDim2.new(1, -24, 0, 38)
+	button.Position = UDim2.new(0, 12, 0, self.NextY)
+	button.BackgroundColor3 = color
+	button.Text = text
+	button.TextColor3 = textColor
+	button.Font = font
+	button.TextSize = textSize
+	button.BackgroundTransparency = transparency
+	button.TextTransparency = textTransparency
+	button.TextXAlignment = alignment
+	button.AutoButtonColor = false
+	button.ClipsDescendants = true
+	button.Parent = parent
+
+	-- 圓角
+	local corner = Instance.new("UICorner", button)
+	corner.CornerRadius = UDim.new(0, cornerRadius)
+
+	-- 邊框線
+	local stroke = Instance.new("UIStroke", button)
+	stroke.Thickness = 1
+	stroke.Color = borderColor
+	stroke.Transparency = 0.35
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+	-- 陰影
+	local shadow = Instance.new("ImageLabel")
+	shadow.BackgroundTransparency = 1
+	shadow.Image = "rbxassetid://1316045217"
+	shadow.ScaleType = Enum.ScaleType.Slice
+	shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+	shadow.Size = UDim2.new(1, 20, 1, 20)
+	shadow.Position = UDim2.fromOffset(-10, -6)
+	shadow.ImageTransparency = 0.8
+	shadow.ZIndex = 0
+	shadow.Parent = button
+
+	-- Ripple 效果
+	local ripple = Instance.new("Frame")
+	ripple.Size = UDim2.new(0, 0, 1, 0)
+	ripple.AnchorPoint = Vector2.new(0.5, 0.5)
+	ripple.Position = UDim2.new(0.5, 0, 0.5, 0)
+	ripple.BackgroundColor3 = textColor
+	ripple.BackgroundTransparency = 1
+	ripple.ZIndex = 2
+	ripple.Parent = button
+	Instance.new("UICorner", ripple).CornerRadius = UDim.new(1, 0)
+
+	-- Hover 動畫
+	button.MouseEnter:Connect(function()
+		TweenService:Create(button, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+			BackgroundColor3 = hoverColor
+		}):Play()
+	end)
+	button.MouseLeave:Connect(function()
+		TweenService:Create(button, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+			BackgroundColor3 = color
+		}):Play()
+	end)
+
+	-- 點擊動畫
+	button.MouseButton1Click:Connect(function()
+		-- Ripple 動畫
+		ripple.Size = UDim2.new(0, 0, 1, 0)
+		ripple.BackgroundTransparency = 0.6
+		TweenService:Create(ripple, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+			Size = UDim2.new(1.6, 0, 1.6, 0),
+			BackgroundTransparency = 1
+		}):Play()
+		TweenService:Create(button, TweenInfo.new(0.1), {BackgroundColor3 = activeColor}):Play()
+		task.delay(0.1, function()
+			TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
+		end)
+
+		if callback then
+			task.spawn(function()
+				pcall(callback)
+			end)
+		end
+	end)
+
+	table.insert(self.Buttons, button)
+	self.NextY = self.NextY + 44
+	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
+end
+
+function SafeUILib:AddTextbox(label, defaultText, callback)
+	self.Buttons = self.Buttons or {}
+	local parent = self:GetParentFrame()
+
+	local Theme = {
+		Surface = Color3.fromRGB(28, 34, 45),
+		Hover = Color3.fromRGB(38, 44, 60),
+		Accent = Color3.fromRGB(24, 115, 235),
+		Text = Color3.fromRGB(228, 235, 245),
+		Border = Color3.fromRGB(40, 50, 70),
+		Placeholder = Color3.fromRGB(140, 150, 165)
+	}
+
+	-- 容器
+	local boxFrame = Instance.new("Frame")
+	boxFrame.Name = "Textbox_" .. math.random(100000, 999999)
+	boxFrame.Size = UDim2.new(1, -24, 0, 38)
+	boxFrame.Position = UDim2.new(0, 12, 0, self.NextY)
+	boxFrame.BackgroundColor3 = Theme.Surface
+	boxFrame.BorderSizePixel = 0
+	boxFrame.Parent = parent
+	Instance.new("UICorner", boxFrame).CornerRadius = UDim.new(0, 8)
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1
+	stroke.Color = Theme.Border
+	stroke.Transparency = 0.4
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = boxFrame
+
+	-- TextBox
+	local textbox = Instance.new("TextBox")
+	textbox.Size = UDim2.new(1, -16, 1, 0)
+	textbox.Position = UDim2.fromOffset(8, 0)
+	textbox.BackgroundTransparency = 1
+	textbox.PlaceholderText = label or "Enter text..."
+	textbox.PlaceholderColor3 = Theme.Placeholder
+	textbox.Text = defaultText or ""
+	textbox.TextColor3 = Theme.Text
+	textbox.Font = Enum.Font.Gotham
+	textbox.TextSize = 15
+	textbox.ClearTextOnFocus = false
+	textbox.TextXAlignment = Enum.TextXAlignment.Left
+	textbox.Parent = boxFrame
+
+	-- Hover 動畫
+	boxFrame.MouseEnter:Connect(function()
+		TweenService:Create(boxFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+			BackgroundColor3 = Theme.Hover
+		}):Play()
+	end)
+	boxFrame.MouseLeave:Connect(function()
+		TweenService:Create(boxFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+			BackgroundColor3 = Theme.Surface
+		}):Play()
+	end)
+
+	-- 聚焦動畫（邊框亮起）
+	textbox.Focused:Connect(function()
+		TweenService:Create(stroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+			Color = Theme.Accent,
+			Transparency = 0
+		}):Play()
+	end)
+	textbox.FocusLost:Connect(function(enterPressed)
+		TweenService:Create(stroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+			Color = Theme.Border,
+			Transparency = 0.4
+		}):Play()
+		if enterPressed and callback then
+			task.spawn(function()
+				pcall(callback, textbox.Text)
+			end)
+		end
+	end)
+
+	self.NextY += 46
+	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
+end
+function SafeUILib:Notify(text, duration)
+	local TweenService = game:GetService("TweenService")
+
+	local Theme = {
+		Surface = Color3.fromRGB(28, 34, 45),
+		Text = Color3.fromRGB(228, 235, 245),
+		Border = Color3.fromRGB(40, 50, 70)
+	}
+
+	local gui = self.Gui or (gethui and gethui()) or game:GetService("CoreGui")
+	local notify = Instance.new("Frame")
+	notify.Name = "Notify_" .. math.random(100000, 999999)
+	notify.Size = UDim2.new(0, 280, 0, 50)
+	notify.AnchorPoint = Vector2.new(1, 1)
+	notify.Position = UDim2.new(1, -20, 1, 60)
+	notify.BackgroundColor3 = Theme.Surface
+	notify.BackgroundTransparency = 0.1
+	notify.BorderSizePixel = 0
+	notify.ClipsDescendants = true
+	notify.Parent = gui
+
+	local corner = Instance.new("UICorner", notify)
+	corner.CornerRadius = UDim.new(0, 10)
+
+	local stroke = Instance.new("UIStroke", notify)
+	stroke.Color = Theme.Border
+	stroke.Transparency = 0.3
+
+	local shadow = Instance.new("ImageLabel")
+	shadow.BackgroundTransparency = 1
+	shadow.Image = "rbxassetid://1316045217"
+	shadow.ScaleType = Enum.ScaleType.Slice
+	shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+	shadow.Size = UDim2.new(1, 24, 1, 24)
+	shadow.Position = UDim2.fromOffset(-12, -6)
+	shadow.ImageTransparency = 0.75
+	shadow.ZIndex = 0
+	shadow.Parent = notify
+
+	local textLabel = Instance.new("TextLabel")
+	textLabel.BackgroundTransparency = 1
+	textLabel.Text = text or "Notification"
+	textLabel.Font = Enum.Font.GothamMedium
+	textLabel.TextColor3 = Theme.Text
+	textLabel.TextSize = 15
+	textLabel.TextWrapped = true
+	textLabel.TextXAlignment = Enum.TextXAlignment.Left
+	textLabel.TextYAlignment = Enum.TextYAlignment.Center
+	textLabel.Size = UDim2.new(1, -20, 1, -8)
+	textLabel.Position = UDim2.new(0, 10, 0, 4)
+	textLabel.Parent = notify
+
+	-- 初始狀態 (滑入前)
+	notify.Position = UDim2.new(1, 300, 1, -70)
+	notify.BackgroundTransparency = 1
+	textLabel.TextTransparency = 1
+
+	-- 滑入動畫
+	TweenService:Create(notify, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+		Position = UDim2.new(1, -20, 1, -70),
+		BackgroundTransparency = 0.1
+	}):Play()
+	TweenService:Create(textLabel, TweenInfo.new(0.35), {
+		TextTransparency = 0
+	}):Play()
+
+	task.delay(duration or 3, function()
+		-- 滑出動畫
+		TweenService:Create(notify, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+			Position = UDim2.new(1, 300, 1, -70),
+			BackgroundTransparency = 1
+		}):Play()
+		TweenService:Create(textLabel, TweenInfo.new(0.2), {
+			TextTransparency = 1
+		}):Play()
+		task.delay(0.3, function()
+			notify:Destroy()
+		end)
+	end)
+end
+
+function SafeUILib:AddToggle(text, default, callback)
+	self.Buttons = self.Buttons or {}
+	local parent = self:GetParentFrame()
+
+	local state = default or false
+	local Theme = {
+		Background = Color3.fromRGB(28, 34, 45),
+		ToggleOff = Color3.fromRGB(60, 65, 80),
+		ToggleOn = Color3.fromRGB(30, 140, 255),
+		Text = Color3.fromRGB(228, 235, 245),
+		Knob = Color3.fromRGB(245, 245, 255)
+	}
+
+	local container = Instance.new("Frame")
+	container.Name = "Toggle_" .. math.random(100000, 999999)
+	container.Size = UDim2.new(1, -24, 0, 40)
+	container.Position = UDim2.new(0, 12, 0, self.NextY)
+	container.BackgroundTransparency = 1
+	container.Parent = parent
+
+	-- 標籤文字
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Text = text or "Toggle"
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 15
+	label.TextColor3 = Theme.Text
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Size = UDim2.new(1, -60, 1, 0)
+	label.Position = UDim2.new(0, 0, 0, 0)
+	label.Parent = container
+
+	-- 開關底座
+	local switch = Instance.new("Frame")
+	switch.Size = UDim2.new(0, 46, 0, 22)
+	switch.AnchorPoint = Vector2.new(1, 0.5)
+	switch.Position = UDim2.new(1, -10, 0.5, 0)
+	switch.BackgroundColor3 = state and Theme.ToggleOn or Theme.ToggleOff
+	switch.BorderSizePixel = 0
+	switch.Parent = container
+	switch.ClipsDescendants = true
+
+	local switchCorner = Instance.new("UICorner", switch)
+	switchCorner.CornerRadius = UDim.new(1, 0)
+
+	-- 光暈（開啟狀態）
+	local glow = Instance.new("ImageLabel")
+	glow.Image = "rbxassetid://5028857084"
+	glow.ImageColor3 = Theme.ToggleOn
+	glow.ScaleType = Enum.ScaleType.Fit
+	glow.BackgroundTransparency = 1
+	glow.Size = UDim2.new(1.5, 0, 1.5, 0)
+	glow.Position = UDim2.new(0.5, 0, 0.5, 0)
+	glow.AnchorPoint = Vector2.new(0.5, 0.5)
+	glow.ImageTransparency = state and 0.7 or 1
+	glow.ZIndex = 0
+	glow.Parent = switch
+
+	-- 滑桿按鈕
+	local knob = Instance.new("Frame")
+	knob.Size = UDim2.new(0, 18, 0, 18)
+	knob.Position = state and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+	knob.BackgroundColor3 = Theme.Knob
+	knob.BorderSizePixel = 0
+	knob.Parent = switch
+	knob.ZIndex = 2
+	Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+	local shadow = Instance.new("ImageLabel")
+	shadow.Image = "rbxassetid://1316045217"
+	shadow.ScaleType = Enum.ScaleType.Slice
+	shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+	shadow.Size = UDim2.new(1.6, 0, 1.6, 0)
+	shadow.Position = UDim2.fromOffset(-4, -4)
+	shadow.ImageTransparency = 0.85
+	shadow.BackgroundTransparency = 1
+	shadow.Parent = knob
+
+	local function animateToggle(on)
+		TweenService:Create(switch, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+			BackgroundColor3 = on and Theme.ToggleOn or Theme.ToggleOff
+		}):Play()
+		TweenService:Create(knob, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+			Position = on and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+		}):Play()
+		TweenService:Create(glow, TweenInfo.new(0.3), {
+			ImageTransparency = on and 0.7 or 1
+		}):Play()
+	end
+
+	-- 點擊切換
+	switch.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			state = not state
+			animateToggle(state)
+			if callback then
+				task.spawn(function()
+					pcall(callback, state)
+				end)
+			end
+		end
+	end)
+
+	self.NextY += 45
+	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
+end
+
+function SafeUILib:AddSlider(text, minValue, maxValue, defaultValue, callback)
+	self.Buttons = self.Buttons or {}
+	local parent = self:GetParentFrame()
+
+	local Theme = {
+		Background = Color3.fromRGB(30, 34, 45),
+		Bar = Color3.fromRGB(55, 60, 75),
+		Accent = Color3.fromRGB(30, 140, 255),
+		Text = Color3.fromRGB(228, 235, 245)
+	}
+
+	local value = defaultValue or minValue
+	local percent = (value - minValue) / (maxValue - minValue)
+
+	-- 標籤
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Text = string.format("%s: %d", text or "Slider", value)
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 15
+	label.TextColor3 = Theme.Text
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Size = UDim2.new(1, -20, 0, 24)
+	label.Position = UDim2.new(0, 10, 0, self.NextY)
+	label.Parent = parent
+
+	-- 外框
+	local back = Instance.new("Frame")
+	back.Size = UDim2.new(1, -24, 0, 10)
+	back.Position = UDim2.new(0, 12, 0, self.NextY + 26)
+	back.BackgroundColor3 = Theme.Bar
+	back.BorderSizePixel = 0
+	back.ClipsDescendants = true
+	back.Parent = parent
+	Instance.new("UICorner", back).CornerRadius = UDim.new(1, 0)
+
+	local stroke = Instance.new("UIStroke", back)
+	stroke.Thickness = 1
+	stroke.Color = Color3.fromRGB(40, 50, 70)
+	stroke.Transparency = 0.4
+
+	-- 填充條
+	local fill = Instance.new("Frame")
+	fill.Size = UDim2.new(percent, 0, 1, 0)
+	fill.BackgroundColor3 = Theme.Accent
+	fill.BorderSizePixel = 0
+	fill.Parent = back
+	Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+
+	-- 漸層效果
+	local gradient = Instance.new("UIGradient", fill)
+	gradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 120, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 180, 255))
+	}
+
+	-- 小滑塊
+	local knob = Instance.new("Frame")
+	knob.Size = UDim2.new(0, 14, 0, 14)
+	knob.AnchorPoint = Vector2.new(0.5, 0.5)
+	knob.Position = UDim2.new(percent, 0, 0.5, 0)
+	knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	knob.BorderSizePixel = 0
+	knob.Parent = back
+	Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+	local knobShadow = Instance.new("ImageLabel", knob)
+	knobShadow.Image = "rbxassetid://1316045217"
+	knobShadow.ScaleType = Enum.ScaleType.Slice
+	knobShadow.SliceCenter = Rect.new(10, 10, 118, 118)
+	knobShadow.Size = UDim2.new(1.8, 0, 1.8, 0)
+	knobShadow.Position = UDim2.fromOffset(-4, -4)
+	knobShadow.BackgroundTransparency = 1
+	knobShadow.ImageTransparency = 0.75
+
+	local dragging = false
+
+	-- 拖曳啟動
+	back.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			SafeUILib.__DraggingLocked = true
+			dragging = true
+		end
+	end)
+
+	UIS.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+			SafeUILib.__DraggingLocked = false
+		end
+	end)
+
+	-- 拖曳更新
+	UIS.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local pos = input.Position.X - back.AbsolutePosition.X
+			local pct = math.clamp(pos / back.AbsoluteSize.X, 0, 1)
+			value = math.floor(minValue + (maxValue - minValue) * pct)
+			TweenService:Create(fill, TweenInfo.new(0.05), {Size = UDim2.new(pct, 0, 1, 0)}):Play()
+			TweenService:Create(knob, TweenInfo.new(0.05), {Position = UDim2.new(pct, 0, 0.5, 0)}):Play()
+			label.Text = string.format("%s: %d", text, value)
+			if callback then
+				task.spawn(function()
+					pcall(callback, value)
+				end)
+			end
+		end
+	end)
+
+	self.NextY += 50
+	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
+end
+
+function SafeUILib:AddRoundToggle(text, default, callback)
+	self.Buttons = self.Buttons or {}
+	local parent = self:GetParentFrame()
+	local state = default or false
+
+	local Theme = {
+		Text = Color3.fromRGB(228, 235, 245),
+		Off = Color3.fromRGB(55, 60, 75),
+		On = Color3.fromRGB(35, 135, 255),
+		Knob = Color3.fromRGB(250, 250, 255)
+	}
+
+	-- 主容器
+	local container = Instance.new("Frame")
+	container.Name = "RoundToggle_" .. math.random(100000, 999999)
+	container.Size = UDim2.new(1, -24, 0, 40)
+	container.Position = UDim2.new(0, 12, 0, self.NextY)
+	container.BackgroundTransparency = 1
+	container.Parent = parent
+
+	-- 標籤文字
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -60, 1, 0)
+	label.BackgroundTransparency = 1
+	label.Text = text or "RoundToggle"
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 15
+	label.TextColor3 = Theme.Text
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = container
+
+	-- 開關底座
+	local base = Instance.new("Frame")
+	base.Size = UDim2.new(0, 46, 0, 24)
+	base.AnchorPoint = Vector2.new(1, 0.5)
+	base.Position = UDim2.new(1, -10, 0.5, 0)
+	base.BackgroundColor3 = state and Theme.On or Theme.Off
+	base.BorderSizePixel = 0
+	base.Parent = container
+	Instance.new("UICorner", base).CornerRadius = UDim.new(1, 0)
+
+	-- 霓虹光暈
+	local glow = Instance.new("ImageLabel", base)
+	glow.Image = "rbxassetid://5028857084"
+	glow.ScaleType = Enum.ScaleType.Fit
+	glow.BackgroundTransparency = 1
+	glow.Size = UDim2.new(1.8, 0, 1.8, 0)
+	glow.Position = UDim2.new(0.5, 0, 0.5, 0)
+	glow.AnchorPoint = Vector2.new(0.5, 0.5)
+	glow.ImageColor3 = Theme.On
+	glow.ImageTransparency = state and 0.75 or 1
+	glow.ZIndex = 0
+
+	-- 滑塊
+	local knob = Instance.new("Frame")
+	knob.Size = UDim2.new(0, 20, 0, 20)
+	knob.AnchorPoint = Vector2.new(0.5, 0.5)
+	knob.Position = state and UDim2.new(1, -12, 0.5, 0) or UDim2.new(0, 12, 0.5, 0)
+	knob.BackgroundColor3 = Theme.Knob
+	knob.BorderSizePixel = 0
+	knob.Parent = base
+	Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+	local shadow = Instance.new("ImageLabel", knob)
+	shadow.Image = "rbxassetid://1316045217"
+	shadow.ScaleType = Enum.ScaleType.Slice
+	shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+	shadow.Size = UDim2.new(1.6, 0, 1.6, 0)
+	shadow.Position = UDim2.fromOffset(-4, -4)
+	shadow.BackgroundTransparency = 1
+	shadow.ImageTransparency = 0.8
+
+	-- 動畫更新函數
+	local function animate(on)
+		local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		TweenService:Create(base, tweenInfo, {
+			BackgroundColor3 = on and Theme.On or Theme.Off
+		}):Play()
+		TweenService:Create(knob, tweenInfo, {
+			Position = on and UDim2.new(1, -12, 0.5, 0) or UDim2.new(0, 12, 0.5, 0)
+		}):Play()
+		TweenService:Create(glow, TweenInfo.new(0.3), {
+			ImageTransparency = on and 0.75 or 1
+		}):Play()
+	end
+
+	-- 點擊切換
+	base.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			state = not state
+			animate(state)
+			if callback then
+				task.spawn(function()
+					pcall(callback, state)
+				end)
+			end
+		end
+	end)
+
+	self.NextY += 46
+	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
+end
+
+function SafeUILib:AddTab(tabName)
+	self.Buttons = self.Buttons or {}
+	local parentFrame = self.Frame or (self.__parent and self.__parent.Frame)
+	local scrollFrame = self.Scroll
+	local tabId = "Tab_" .. tostring(math.random(100000, 999999))
+
+	-- 確保有分頁導航列
+	if not self.TabBar then
+		local tabBar = Instance.new("Frame")
+		tabBar.Name = "TabBar"
+		tabBar.Size = UDim2.new(1, 0, 0, 36)
+		tabBar.BackgroundColor3 = Color3.fromRGB(25, 28, 38)
+		tabBar.BorderSizePixel = 0
+		tabBar.Parent = parentFrame
+
+		local barCorner = Instance.new("UICorner", tabBar)
+		barCorner.CornerRadius = UDim.new(0, 8)
+
+		local stroke = Instance.new("UIStroke", tabBar)
+		stroke.Color = Color3.fromRGB(40, 50, 70)
+		stroke.Transparency = 0.4
+
+		self.TabBar = tabBar
+		self.TabButtons = {}
+	end
+
+	-- 分頁按鈕
+	local button = Instance.new("TextButton")
+	button.Name = "TabButton_" .. tabName
+	button.Size = UDim2.new(0, 100, 1, 0)
+	button.BackgroundTransparency = 1
+	button.Text = tabName
+	button.Font = Enum.Font.GothamSemibold
+	button.TextSize = 15
+	button.TextColor3 = Color3.fromRGB(180, 190, 210)
+	button.AutoButtonColor = false
+	button.Parent = self.TabBar
+
+	local highlight = Instance.new("Frame")
+	highlight.Size = UDim2.new(0, 0, 0, 2)
+	highlight.Position = UDim2.new(0.5, 0, 1, -1)
+	highlight.AnchorPoint = Vector2.new(0.5, 1)
+	highlight.BackgroundColor3 = Color3.fromRGB(35, 140, 255)
+	highlight.BorderSizePixel = 0
+	highlight.ZIndex = 2
+	highlight.Parent = button
+
+	Instance.new("UICorner", highlight).CornerRadius = UDim.new(1, 0)
+
+	-- 自動排列按鈕
+	if not self.TabLayout then
+		local layout = Instance.new("UIListLayout")
+		layout.FillDirection = Enum.FillDirection.Horizontal
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Padding = UDim.new(0, 6)
+		layout.Parent = self.TabBar
+		self.TabLayout = layout
+	end
+
+	-- 內容框
+	local tabFrame = Instance.new("Frame")
+	tabFrame.Name = tabId
+	tabFrame.Size = UDim2.new(1, 0, 1, -40)
+	tabFrame.Position = UDim2.new(0, 0, 0, 40)
+	tabFrame.BackgroundTransparency = 1
+	tabFrame.Visible = false
+	tabFrame.Parent = scrollFrame
+
+	self.Tabs[tabName] = tabFrame
+	self.TabButtons[tabName] = button
+
+	-- 點擊切換事件
+	button.MouseButton1Click:Connect(function()
+		for name, tab in pairs(self.Tabs) do
+			tab.Visible = (name == tabName)
+		end
+		for name, btn in pairs(self.TabButtons) do
+			local isActive = (name == tabName)
+			local targetSize = isActive and 80 or 0
+			local targetColor = isActive and Color3.fromRGB(35, 140, 255) or Color3.fromRGB(180, 190, 210)
+			TweenService:Create(btn, TweenInfo.new(0.2), {TextColor3 = targetColor}):Play()
+			TweenService:Create(btn:FindFirstChildOfClass("Frame"), TweenInfo.new(0.25), {Size = UDim2.new(0, targetSize, 0, 2)}):Play()
+		end
+	end)
+
+	-- 預設第一個 Tab 開啟
+	if not self.DefaultTabSet then
+		self.DefaultTabSet = true
+		task.defer(function()
+			button:MouseButton1Click()
+		end)
+	end
+
+	return setmetatable({
+		Frame = tabFrame,
+		NextY = 10,
+		Buttons = {},
+		__parent = self
+	}, SafeUILib)
+end
+
+
+function SafeUILib:AddKeybind(labelText, defaultKey, callback)
+	self.Buttons = self.Buttons or {}
+	local parent = self:GetParentFrame()
+
+	local Theme = {
+		Background = Color3.fromRGB(28, 34, 45),
+		Hover = Color3.fromRGB(40, 46, 58),
+		Accent = Color3.fromRGB(35, 135, 255),
+		Text = Color3.fromRGB(228, 235, 245),
+		Placeholder = Color3.fromRGB(140, 150, 165)
+	}
+
+	local currentKey = defaultKey or Enum.KeyCode.E
+	local listening = false
+
+	-- 容器
+	local container = Instance.new("Frame")
+	container.Name = "Keybind_" .. math.random(100000, 999999)
+	container.Size = UDim2.new(1, -24, 0, 36)
+	container.Position = UDim2.new(0, 12, 0, self.NextY)
+	container.BackgroundTransparency = 1
+	container.Parent = parent
+
+	-- 標籤
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.new(1, -120, 1, 0)
+	label.Position = UDim2.new(0, 0, 0, 0)
+	label.Text = labelText or "Keybind"
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 15
+	label.TextColor3 = Theme.Text
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = container
+
+	-- 按鍵框
+	local button = Instance.new("TextButton")
+	button.Size = UDim2.new(0, 100, 0, 28)
+	button.AnchorPoint = Vector2.new(1, 0.5)
+	button.Position = UDim2.new(1, 0, 0.5, 0)
+	button.BackgroundColor3 = Theme.Background
+	button.Text = "[" .. currentKey.Name .. "]"
+	button.TextColor3 = Theme.Text
+	button.Font = Enum.Font.GothamSemibold
+	button.TextSize = 14
+	button.AutoButtonColor = false
+	button.Parent = container
+	Instance.new("UICorner", button).CornerRadius = UDim.new(0, 6)
+
+	local stroke = Instance.new("UIStroke", button)
+	stroke.Thickness = 1
+	stroke.Color = Color3.fromRGB(50, 60, 80)
+	stroke.Transparency = 0.4
+
+	-- Hover 效果
+	button.MouseEnter:Connect(function()
+		if not listening then
+			TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Hover}):Play()
+		end
+	end)
+	button.MouseLeave:Connect(function()
+		if not listening then
+			TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Background}):Play()
+		end
+	end)
+
+	-- 點擊開始監聽
+	button.MouseButton1Click:Connect(function()
+		if listening then return end
+		listening = true
+		button.Text = "[Press a key...]"
+		stroke.Color = Theme.Accent
+
+		-- 閃爍動畫（等待輸入）
+		task.spawn(function()
+			while listening do
+				TweenService:Create(button, TweenInfo.new(0.3), {TextTransparency = 0.3}):Play()
+				task.wait(0.3)
+				TweenService:Create(button, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
+				task.wait(0.3)
+			end
+			button.TextTransparency = 0
+		end)
+	end)
+
+	-- 鍵盤事件監聽
+	UIS.InputBegan:Connect(function(input, gpe)
+		if gpe then return end
+
+		if listening then
+			listening = false
+			currentKey = input.KeyCode
+			button.Text = "[" .. currentKey.Name .. "]"
+			stroke.Color = Color3.fromRGB(50, 60, 80)
+			if callback then
+				task.spawn(function()
+					pcall(callback, currentKey)
+				end)
+			end
+		elseif input.KeyCode == currentKey then
+			if callback then
+				task.spawn(function()
+					pcall(callback, currentKey)
+				end)
+			end
+		end
+	end)
+
+	self.NextY += 42
+	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
+end
+
+function SafeUILib:SwitchTab(tabName)
+	if not self.Tabs or not self.TabButtons then return end
+	local selectedTab = self.Tabs[tabName]
+	if not selectedTab then return end
+
+	for name, tab in pairs(self.Tabs) do
+		local isActive = (name == tabName)
+		if isActive then
+			tab.Visible = true
+			tab.BackgroundTransparency = 1
+			tab.Position = UDim2.new(0, 0, 0, 20)
+			TweenService:Create(tab, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				BackgroundTransparency = 0,
+				Position = UDim2.new(0, 0, 0, 0)
+			}):Play()
+		else
+			TweenService:Create(tab, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				BackgroundTransparency = 1,
+				Position = UDim2.new(0, 0, 0, 20)
+			}):Play()
+			task.delay(0.25, function()
+				if not (self.Tabs[tabName] == tab) then
+					tab.Visible = false
+				end
+			end)
+		end
+	end
+
+	-- 分頁按鈕同步高亮動畫
+	for name, btn in pairs(self.TabButtons) do
+		local isActive = (name == tabName)
+		local highlight = btn:FindFirstChildOfClass("Frame")
+		if highlight then
+			TweenService:Create(highlight, TweenInfo.new(0.25), {
+				Size = isActive and UDim2.new(0, 80, 0, 2) or UDim2.new(0, 0, 0, 2)
+			}):Play()
+		end
+		TweenService:Create(btn, TweenInfo.new(0.25), {
+			TextColor3 = isActive and Color3.fromRGB(35, 140, 255) or Color3.fromRGB(180, 190, 210)
+		}):Play()
+	end
+end
+
+function SafeUILib:GetParentFrame()
+	return self.Frame or (self.__parent and self.__parent.Frame)
+end
+
+-- 完整回傳
+return SafeUILib
+
