@@ -1304,18 +1304,34 @@ end
 
 function SafeUILib:AddTab(tabName)
 	self.Buttons = self.Buttons or {}
-	local parentFrame = self.Frame or (self.__parent and self.__parent.Frame)
-	local scrollFrame = self.Scroll
-	local tabId = "Tab_" .. tostring(math.random(100000, 999999))
+	self.Tabs = self.Tabs or {}
+	self.TabButtons = self.TabButtons or {}
 
-	-- 確保有分頁導航列
+	local tabId = "Tab_" .. tostring(math.random(100000, 999999))
+	local parentFrame = self:GetParentFrame()
+
+	-- 確保有主內容 Scroll
+	if not self.Scroll then
+		local scrollFrame = Instance.new("ScrollingFrame")
+		scrollFrame.Name = "ContentScroll"
+		scrollFrame.Size = UDim2.new(1, 0, 1, -40)
+		scrollFrame.Position = UDim2.new(0, 0, 0, 40)
+		scrollFrame.BackgroundTransparency = 1
+		scrollFrame.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
+		scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+		scrollFrame.ScrollBarThickness = 6
+		scrollFrame.Parent = self.ContentCard or parentFrame
+		self.Scroll = scrollFrame
+	end
+
+	-- 建立分頁導航列
 	if not self.TabBar then
 		local tabBar = Instance.new("Frame")
 		tabBar.Name = "TabBar"
 		tabBar.Size = UDim2.new(1, 0, 0, 36)
 		tabBar.BackgroundColor3 = Color3.fromRGB(25, 28, 38)
 		tabBar.BorderSizePixel = 0
-		tabBar.Parent = parentFrame
+		tabBar.Parent = self.ContentCard or parentFrame
 
 		local barCorner = Instance.new("UICorner", tabBar)
 		barCorner.CornerRadius = UDim.new(0, 8)
@@ -1324,8 +1340,13 @@ function SafeUILib:AddTab(tabName)
 		stroke.Color = Color3.fromRGB(40, 50, 70)
 		stroke.Transparency = 0.4
 
+		local layout = Instance.new("UIListLayout")
+		layout.FillDirection = Enum.FillDirection.Horizontal
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Padding = UDim.new(0, 6)
+		layout.Parent = tabBar
+
 		self.TabBar = tabBar
-		self.TabButtons = {}
 	end
 
 	-- 分頁按鈕
@@ -1348,27 +1369,19 @@ function SafeUILib:AddTab(tabName)
 	highlight.BorderSizePixel = 0
 	highlight.ZIndex = 2
 	highlight.Parent = button
-
 	Instance.new("UICorner", highlight).CornerRadius = UDim.new(1, 0)
 
-	-- 自動排列按鈕
-	if not self.TabLayout then
-		local layout = Instance.new("UIListLayout")
-		layout.FillDirection = Enum.FillDirection.Horizontal
-		layout.SortOrder = Enum.SortOrder.LayoutOrder
-		layout.Padding = UDim.new(0, 6)
-		layout.Parent = self.TabBar
-		self.TabLayout = layout
-	end
-
-	-- 內容框
-	local tabFrame = Instance.new("Frame")
+	-- 分頁內容
+	local tabFrame = Instance.new("ScrollingFrame")
 	tabFrame.Name = tabId
 	tabFrame.Size = UDim2.new(1, 0, 1, -40)
 	tabFrame.Position = UDim2.new(0, 0, 0, 40)
 	tabFrame.BackgroundTransparency = 1
+	tabFrame.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
+	tabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+	tabFrame.ScrollBarThickness = 4
 	tabFrame.Visible = false
-	tabFrame.Parent = scrollFrame
+	tabFrame.Parent = self.Scroll
 
 	self.Tabs[tabName] = tabFrame
 	self.TabButtons[tabName] = button
@@ -1387,7 +1400,7 @@ function SafeUILib:AddTab(tabName)
 		end
 	end)
 
-	-- 預設第一個 Tab 開啟
+	-- 預設開啟第一個分頁
 	if not self.DefaultTabSet then
 		self.DefaultTabSet = true
 		task.defer(function()
