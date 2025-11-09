@@ -7,7 +7,7 @@ local TweenService = game:GetService("TweenService")
 function SafeUILib:CreateWindow(opts)
 	opts = opts or {}
 
-	-- 主題（之後要全局用可以移到外面成為 SafeUILib.Theme）
+	-- 主
 	local Theme = {
 		Bg = Color3.fromRGB(12, 14, 20),
 		Card = Color3.fromRGB(18, 22, 30),
