@@ -1412,7 +1412,7 @@ function SafeUILib:AddTab(tabName)
 	if not self.DefaultTabSet then
 		self.DefaultTabSet = true
 		task.defer(function()
-			button.MouseButton1Click:Fire()
+			button:Activate()
 		end)
 	end
 
