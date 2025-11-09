@@ -540,8 +540,11 @@ end
 function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	self.Buttons = self.Buttons or {}
 	local parent = self:GetParentFrame()
-	local currentColor = defaultColor or Color3.fromRGB(255, 0, 0)
+	local UIS = game:GetService("UserInputService")
+	local TweenService = game:GetService("TweenService")
+	local CoreGui = game:GetService("CoreGui")
 
+	local currentColor = defaultColor or Color3.fromRGB(255, 0, 0)
 	local Theme = {
 		Text = Color3.fromRGB(228, 235, 245),
 		Surface = Color3.fromRGB(28, 34, 45),
@@ -549,7 +552,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 		Border = Color3.fromRGB(40, 50, 70),
 		Shadow = Color3.fromRGB(10, 10, 15)
 	}
-    
+
 	-- 標題
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1
@@ -563,7 +566,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	title.Parent = parent
 	self.NextY += 26
 
-	-- 小顏色按鈕
+	-- 小按鈕
 	local toggleButton = Instance.new("TextButton")
 	toggleButton.Size = UDim2.new(0, 40, 0, 20)
 	toggleButton.Position = UDim2.new(0, 12, 0, self.NextY)
@@ -581,113 +584,106 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	stroke.Transparency = 0.35
 	stroke.Parent = toggleButton
 
-	-- 浮動色盤（放 CoreGui，防止被 ScrollFrame 遮住）
-	local paletteHolder = Instance.new("Frame")
-	paletteHolder.Size = UDim2.new(0, 200, 0, 0)
-	paletteHolder.BackgroundTransparency = 1
-	paletteHolder.BorderSizePixel = 0
-	paletteHolder.Visible = false
-	paletteHolder.ZIndex = 100
-	paletteHolder.Parent = game:GetService("CoreGui")
+	-- 🧩 顏色盤 ScreenGui
+	local pickerGui = Instance.new("ScreenGui")
+	pickerGui.Name = "NativeColorPickerGUI"
+	pickerGui.ResetOnSpawn = false
+	pickerGui.IgnoreGuiInset = true
+	pickerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	pickerGui.Parent = CoreGui
 
-	local palette = Instance.new("Frame")
-	palette.Size = UDim2.new(0, 200, 0, 130)
-	palette.BackgroundColor3 = Theme.Surface
-	palette.BorderSizePixel = 0
-	palette.ClipsDescendants = true
-	palette.ZIndex = 101
-	palette.Parent = paletteHolder
-	Instance.new("UICorner", palette).CornerRadius = UDim.new(0, 8)
+	local picker = Instance.new("Frame")
+	picker.Size = UDim2.new(0, 200, 0, 130)
+	picker.BackgroundColor3 = Theme.Surface
+	picker.Visible = false
+	picker.ZIndex = 100
+	picker.Parent = pickerGui
+	Instance.new("UICorner", picker).CornerRadius = UDim.new(0, 8)
 
-	local pStroke = Instance.new("UIStroke", palette)
+	local pStroke = Instance.new("UIStroke", picker)
 	pStroke.Color = Theme.Border
 	pStroke.Transparency = 0.35
 
-	-- 顏色漸層
-	local hue = Instance.new("Frame")
-	hue.Size = UDim2.new(1, 0, 1, 0)
-	hue.BorderSizePixel = 0
-	hue.ClipsDescendants = true
-	hue.Parent = palette
+	task.defer(function()
+		-- 顏色漸層區
+		local hue = Instance.new("Frame")
+		hue.Size = UDim2.new(1, -20, 0, 100)
+		hue.Position = UDim2.new(0, 10, 0, 10)
+		hue.BorderSizePixel = 0
+		hue.ClipsDescendants = true
+		hue.ZIndex = 200
+		hue.Parent = picker
 
-	local hueGradient = Instance.new("UIGradient")
-	hueGradient.Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
-		ColorSequenceKeypoint.new(0.16, Color3.fromRGB(255, 255, 0)),
-		ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
-		ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
-		ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 0, 255)),
-		ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
-		ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
-	}
-	hueGradient.Parent = hue
+		local hueGradient = Instance.new("UIGradient", hue)
+		hueGradient.Color = ColorSequence.new{
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+			ColorSequenceKeypoint.new(0.16, Color3.fromRGB(255, 255, 0)),
+			ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+			ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
+			ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 0, 255)),
+			ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
+		}
 
-	local overlay = Instance.new("Frame", hue)
-	overlay.Size = UDim2.new(1, 0, 1, 0)
-	overlay.BackgroundColor3 = Color3.new(1, 1, 1)
-	overlay.BackgroundTransparency = 1
-	local light = Instance.new("UIGradient", overlay)
-	light.Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
-	}
-	light.Rotation = 90
+		local overlay = Instance.new("UIGradient", hue)
+		overlay.Color = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+			ColorSequenceKeypoint.new(1, Color3.new(0, 0, 0))
+		}
+		overlay.Rotation = 90
 
-	local dot = Instance.new("Frame", hue)
-	dot.Size = UDim2.new(0, 8, 0, 8)
-	dot.AnchorPoint = Vector2.new(0.5, 0.5)
-	dot.Position = UDim2.new(0.5, 0, 0.5, 0)
-	dot.BackgroundColor3 = Color3.new(1, 1, 1)
-	dot.BorderColor3 = Color3.new(0, 0, 0)
-	dot.BorderSizePixel = 1
-	dot.ZIndex = 102
-	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+		local dot = Instance.new("Frame", hue)
+		dot.Size = UDim2.new(0, 10, 0, 10)
+		dot.AnchorPoint = Vector2.new(0.5, 0.5)
+		dot.Position = UDim2.new(0.5, 0, 0.5, 0)
+		dot.BackgroundColor3 = Color3.new(1, 1, 1)
+		dot.BorderColor3 = Color3.new(0, 0, 0)
+		dot.BorderSizePixel = 1
+		dot.ZIndex = 201
+		Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
 
-	-- 更新顏色
-	local function updateColor(pos)
-		local x = math.clamp((pos.X - hue.AbsolutePosition.X) / hue.AbsoluteSize.X, 0, 1)
-		local y = math.clamp((pos.Y - hue.AbsolutePosition.Y) / hue.AbsoluteSize.Y, 0, 1)
-		currentColor = Color3.fromHSV(x, 1, 1 - y)
-		toggleButton.BackgroundColor3 = currentColor
-		dot.Position = UDim2.new(x, 0, y, 0)
-		if callback then pcall(callback, currentColor) end
-	end
+		local function updateColor(pos)
+			local x = math.clamp((pos.X - hue.AbsolutePosition.X) / hue.AbsoluteSize.X, 0, 1)
+			local y = math.clamp((pos.Y - hue.AbsolutePosition.Y) / hue.AbsoluteSize.Y, 0, 1)
+			currentColor = Color3.fromHSV(x, 1, 1 - y)
+			toggleButton.BackgroundColor3 = currentColor
+			dot.Position = UDim2.new(x, 0, y, 0)
+			if callback then pcall(callback, currentColor) end
+		end
 
--- 開關顏色盤
-local isOpen = false
-toggleButton.MouseButton1Click:Connect(function()
-	isOpen = not isOpen
-	if isOpen then
-		local absPos = toggleButton.AbsolutePosition
-		paletteHolder.Position = UDim2.fromOffset(absPos.X + 45, absPos.Y + 35)
-		paletteHolder.Parent = game:GetService("CoreGui")
-		paletteHolder.Visible = true
-		TweenService:Create(paletteHolder, TweenInfo.new(0.25), {Size = UDim2.new(0, 200, 0, 130)}):Play()
-	else
-		TweenService:Create(paletteHolder, TweenInfo.new(0.25), {Size = UDim2.new(0, 200, 0, 0)}):Play()
-		task.delay(0.25, function()
-			paletteHolder.Visible = false
+		-- 拖曳事件
+		local dragging = false
+		hue.InputBegan:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = true
+				updateColor(i.Position)
+			end
 		end)
-	end
-end)
-
-
-
-	local dragging = false
-	hue.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-			updateColor(i.Position)
-		end
+		UIS.InputChanged:Connect(function(i)
+			if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+				updateColor(i.Position)
+			end
+		end)
+		UIS.InputEnded:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = false
+			end
+		end)
 	end)
-	UIS.InputChanged:Connect(function(i)
-		if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-			updateColor(i.Position)
-		end
-	end)
-	UIS.InputEnded:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = false
+
+	-- 彈出 / 收起
+	local isOpen = false
+	toggleButton.MouseButton1Click:Connect(function()
+		isOpen = not isOpen
+		local absPos = toggleButton.AbsolutePosition
+		picker.Position = UDim2.fromOffset(absPos.X + 45, absPos.Y + 35)
+		if isOpen then
+			picker.Visible = true
+			picker.Size = UDim2.new(0, 200, 0, 0)
+			TweenService:Create(picker, TweenInfo.new(0.25), {Size = UDim2.new(0, 200, 0, 130)}):Play()
+		else
+			TweenService:Create(picker, TweenInfo.new(0.25), {Size = UDim2.new(0, 200, 0, 0)}):Play()
+			task.delay(0.25, function() picker.Visible = false end)
 		end
 	end)
 
