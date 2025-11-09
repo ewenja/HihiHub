@@ -1333,8 +1333,7 @@ function SafeUILib:AddTab(tabName)
 		tabBar.BorderSizePixel = 0
 		tabBar.Parent = self.ContentCard or parentFrame
 
-		local barCorner = Instance.new("UICorner", tabBar)
-		barCorner.CornerRadius = UDim.new(0, 8)
+		Instance.new("UICorner", tabBar).CornerRadius = UDim.new(0, 8)
 
 		local stroke = Instance.new("UIStroke", tabBar)
 		stroke.Color = Color3.fromRGB(40, 50, 70)
@@ -1386,25 +1385,34 @@ function SafeUILib:AddTab(tabName)
 	self.Tabs[tabName] = tabFrame
 	self.TabButtons[tabName] = button
 
-	-- 點擊切換事件
-	button.MouseButton1Click:Connect(function()
-		for name, tab in pairs(self.Tabs) do
-			tab.Visible = (name == tabName)
+	task.defer(function()
+		if not button:IsA("TextButton") then
+			warn("[SafeUILib] TabButton_" .. tabName .. " 不是 TextButton，而是 " .. button.ClassName)
+			return
 		end
-		for name, btn in pairs(self.TabButtons) do
-			local isActive = (name == tabName)
-			local targetSize = isActive and 80 or 0
-			local targetColor = isActive and Color3.fromRGB(35, 140, 255) or Color3.fromRGB(180, 190, 210)
-			TweenService:Create(btn, TweenInfo.new(0.2), {TextColor3 = targetColor}):Play()
-			TweenService:Create(btn:FindFirstChildOfClass("Frame"), TweenInfo.new(0.25), {Size = UDim2.new(0, targetSize, 0, 2)}):Play()
-		end
+
+		button.MouseButton1Click:Connect(function()
+			for name, tab in pairs(self.Tabs) do
+				tab.Visible = (name == tabName)
+			end
+			for name, btn in pairs(self.TabButtons) do
+				local isActive = (name == tabName)
+				local targetSize = isActive and 80 or 0
+				local targetColor = isActive and Color3.fromRGB(35, 140, 255) or Color3.fromRGB(180, 190, 210)
+				TweenService:Create(btn, TweenInfo.new(0.2), {TextColor3 = targetColor}):Play()
+				local line = btn:FindFirstChildOfClass("Frame")
+				if line then
+					TweenService:Create(line, TweenInfo.new(0.25), {Size = UDim2.new(0, targetSize, 0, 2)}):Play()
+				end
+			end
+		end)
 	end)
 
 	-- 預設開啟第一個分頁
 	if not self.DefaultTabSet then
 		self.DefaultTabSet = true
 		task.defer(function()
-			button:MouseButton1Click()
+			button.MouseButton1Click:Fire()
 		end)
 	end
 
