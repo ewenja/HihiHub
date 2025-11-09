@@ -928,27 +928,25 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	stroke.Color = Theme.Border
 	stroke.Transparency = 0.35
 
-	-- 🎨 顏色盤浮窗
-	local picker = Instance.new("Frame")
-	picker.Name = "TailwindPicker"
-	picker.Size = UDim2.new(0, 220, 0, 180)
-	picker.BackgroundColor3 = Theme.Surface
-	picker.Visible = false
-	picker.ZIndex = 9999
-	picker.Parent = CoreGui
-	picker.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	Instance.new("UICorner", picker).CornerRadius = UDim.new(0, 8)
-	local pStroke = Instance.new("UIStroke", picker)
-	pStroke.Color = Theme.Border
-	pStroke.Transparency = 0.4
+-- 顏色盤浮窗
+local pickerGui = Instance.new("ScreenGui")
+pickerGui.Name = "TailwindPickerGUI"
+pickerGui.ResetOnSpawn = false
+pickerGui.IgnoreGuiInset = true
+pickerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+pickerGui.Parent = CoreGui
 
-	-- 主色盤
-	local colorArea = Instance.new("Frame", picker)
-	colorArea.Size = UDim2.new(1, -20, 0, 120)
-	colorArea.Position = UDim2.new(0, 10, 0, 10)
-	colorArea.BorderSizePixel = 0
-	colorArea.ClipsDescendants = true
-	colorArea.ZIndex = 10000
+local picker = Instance.new("Frame")
+picker.Name = "TailwindPicker"
+picker.Size = UDim2.new(0, 220, 0, 180)
+picker.BackgroundColor3 = Theme.Surface
+picker.Visible = false
+picker.ZIndex = 9999
+picker.Parent = pickerGui
+Instance.new("UICorner", picker).CornerRadius = UDim.new(0, 8)
+local pStroke = Instance.new("UIStroke", picker)
+pStroke.Color = Theme.Border
+pStroke.Transparency = 0.4
 
 	local hueGradient = Instance.new("UIGradient", colorArea)
 	hueGradient.Color = ColorSequence.new{
