@@ -880,6 +880,8 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	local parent = self:GetParentFrame()
 	local currentColor = defaultColor or Color3.fromRGB(255, 255, 255)
 
+	local tabId = "Tailwind_" .. tostring(math.random(100000, 999999))
+
 	local Theme = {
 		Surface = Color3.fromRGB(28, 34, 45),
 		Text = Color3.fromRGB(228, 235, 245),
@@ -903,6 +905,7 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 
 	-- 顏色按鈕
 	local colorBox = Instance.new("TextButton")
+	colorBox.Name = "ColorButton_" .. tabId
 	colorBox.Size = UDim2.new(0, 40, 0, 20)
 	colorBox.Position = UDim2.new(0, 12, 0, self.NextY)
 	colorBox.BackgroundColor3 = currentColor
@@ -917,18 +920,16 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	stroke.Color = Theme.Border
 	stroke.Transparency = 0.35
 
-	-- Picker GUI
 	local pickerGui = Instance.new("ScreenGui")
-	pickerGui.Name = "TailwindPickerGUI"
+	pickerGui.Name = "TailwindPickerGUI_" .. tabId
 	pickerGui.IgnoreGuiInset = true
-	pickerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	pickerGui.ResetOnSpawn = false
+	pickerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	pickerGui.Parent = CoreGui
 
 	local picker = Instance.new("Frame")
-	picker.Name = "TailwindPicker"
+	picker.Name = "TailwindPicker_" .. tabId
 	picker.Size = UDim2.new(0, 220, 0, 180)
-	picker.Position = UDim2.new(0, 0, 0, 0)
 	picker.BackgroundColor3 = Theme.Surface
 	picker.Visible = false
 	picker.ZIndex = 9999
@@ -940,12 +941,9 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	pStroke.Color = Theme.Border
 	pStroke.Transparency = 0.4
 
-	picker:GetPropertyChangedSignal("Parent"):Connect(function()
-		if not picker.Parent then return end
-	end)
-
-	-- 顏色區域
+	-- 顏色盤
 	local colorArea = Instance.new("Frame")
+	colorArea.Name = "ColorArea_" .. tabId
 	colorArea.Size = UDim2.new(1, -20, 0, 120)
 	colorArea.Position = UDim2.new(0, 10, 0, 10)
 	colorArea.BorderSizePixel = 0
@@ -963,6 +961,7 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 		ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
 		ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
 	}
+
 	local overlay = Instance.new("UIGradient", colorArea)
 	overlay.Color = ColorSequence.new{
 		ColorSequenceKeypoint.new(0, Color3.new(1,1,1)),
@@ -971,6 +970,7 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	overlay.Rotation = 90
 
 	local dot = Instance.new("Frame", colorArea)
+	dot.Name = "Dot_" .. tabId
 	dot.Size = UDim2.new(0, 10, 0, 10)
 	dot.AnchorPoint = Vector2.new(0.5, 0.5)
 	dot.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -979,19 +979,21 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	dot.ZIndex = 10001
 	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
 
+	-- 顏色更新
 	local draggingColor = false
 	local hue = 0
-
 	local function updateColor(x, y)
 		local sx = math.clamp((x - colorArea.AbsolutePosition.X) / colorArea.AbsoluteSize.X, 0, 1)
 		local sy = math.clamp((y - colorArea.AbsolutePosition.Y) / colorArea.AbsoluteSize.Y, 0, 1)
 		dot.Position = UDim2.new(sx, 0, sy, 0)
 		currentColor = Color3.fromHSV(hue, sx, 1 - sy)
 		colorBox.BackgroundColor3 = currentColor
+		if callback then pcall(callback, currentColor) end
 	end
 
+	-- 拖曳選色
 	task.spawn(function()
-		task.wait(0.05)
+		task.wait(0.1)
 		colorArea.InputBegan:Connect(function(i)
 			if i.UserInputType == Enum.UserInputType.MouseButton1 then
 				draggingColor = true
@@ -1011,13 +1013,35 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 		end
 	end)
 
-	-- 開關 picker
+	local dragging, dragOffset
+	picker.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragOffset = Vector2.new(input.Position.X - picker.AbsolutePosition.X, input.Position.Y - picker.AbsolutePosition.Y)
+		end
+	end)
+	UIS.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local newPos = Vector2.new(input.Position.X - dragOffset.X, input.Position.Y - dragOffset.Y)
+			picker.Position = UDim2.fromOffset(newPos.X, newPos.Y)
+		end
+	end)
+	UIS.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+
 	local open = false
 	colorBox.MouseButton1Click:Connect(function()
 		open = not open
+		local screenSize = workspace.CurrentCamera.ViewportSize
+		local pos = colorBox.AbsolutePosition
+		local px = math.clamp(pos.X + 60, 0, screenSize.X - 240)
+		local py = math.clamp(pos.Y, 0, screenSize.Y - 200)
+
 		if open then
-			local pos = colorBox.AbsolutePosition
-			picker.Position = UDim2.fromOffset(pos.X + 50, pos.Y + 25)
+			picker.Position = UDim2.fromOffset(px, py)
 			picker.Visible = true
 			picker.Size = UDim2.new(0, 220, 0, 0)
 			TweenService:Create(picker, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
@@ -1031,7 +1055,6 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 		end
 	end)
 end
-
 
 
 function SafeUILib:Notify(text, duration)
