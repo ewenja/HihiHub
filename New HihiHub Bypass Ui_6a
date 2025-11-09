@@ -144,7 +144,7 @@ sbList.Parent = sbContainer
 	ccStroke.Transparency = 0.5
 	ccStroke.Parent = contentCard
 
-	-- 內容滾動區（為了與你原本 API 相容：self.Frame 指向這個 ScrollingFrame）
+	-- 內容滾動區
 	local scroll = Instance.new("ScrollingFrame")
 	scroll.Name = "ContentScroll"
 	scroll.BackgroundTransparency = 1
