@@ -93,7 +93,7 @@ function SafeUILib:CreateWindow(opts)
 	topLine.Position = UDim2.new(0, 12, 1, -1)
 	topLine.Parent = topbar
 
-	-- Sidebar（左側）
+	-- Sidebar
 	local sidebar = Instance.new("Frame")
 	sidebar.Name = "Sidebar"
 	sidebar.BackgroundColor3 = Theme.Sidebar
@@ -110,7 +110,7 @@ function SafeUILib:CreateWindow(opts)
 	sbStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	sbStroke.Parent = sidebar
 
-	-- Sidebar 內容容器（之後 AddTab 會加按鈕進來）
+	-- Sidebar 
 	local sbContainer = Instance.new("ScrollingFrame")
 	sbContainer.Name = "Container"
 	sbContainer.BackgroundTransparency = 1
@@ -160,7 +160,7 @@ sbList.Parent = sbContainer
 	contentList.SortOrder = Enum.SortOrder.LayoutOrder
 	contentList.Parent = scroll
 
-	-- 拖曳（整個 root 可拖）
+	-- 拖曳
 	local dragging, dragStart, startPos = false
 	topbar.InputBegan:Connect(function(inputObj)
 		if inputObj.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -187,15 +187,15 @@ sbList.Parent = sbContainer
 		end
 	end)
 
-	-- 回傳（保持與你原本 API 相容）
+	-- 回傳
 	local self = setmetatable({
 		Gui = gui,
-		Root = root,          -- 新增：主容器
-		TopBar = topbar,      -- 新增：標題列
-		Sidebar = sbContainer,-- 新增：左側容器（給 AddTab 用）
+		Root = root,       
+		TopBar = topbar,     
+		Sidebar = sbContainer,
 		ContentCard = contentCard,
-		Scroll = scroll,      -- 內容滾動區
-		Frame = scroll,       -- 和舊 API 相容：元件都塞到這裡
+		Scroll = scroll,   
+		Frame = scroll,     
 		Tabs = {},
 		Buttons = {},
 		NextY = 10
