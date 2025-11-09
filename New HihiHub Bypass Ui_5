@@ -562,7 +562,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	title.Parent = parent
 	self.NextY += 26
 
-	-- 小顏色按鈕（點擊展開）
+	-- 小顏色按鈕
 	local toggleButton = Instance.new("TextButton")
 	toggleButton.Size = UDim2.new(0, 40, 0, 20)
 	toggleButton.Position = UDim2.new(0, 12, 0, self.NextY)
@@ -580,10 +580,9 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	stroke.Transparency = 0.35
 	stroke.Parent = toggleButton
 
-	-- 浮動色盤
+	-- 浮動色盤（放 CoreGui，防止被 ScrollFrame 遮住）
 	local paletteHolder = Instance.new("Frame")
 	paletteHolder.Size = UDim2.new(0, 200, 0, 0)
-	paletteHolder.Position = UDim2.new(0, 12, 0, self.NextY)
 	paletteHolder.BackgroundTransparency = 1
 	paletteHolder.BorderSizePixel = 0
 	paletteHolder.Visible = false
@@ -599,21 +598,9 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	palette.Parent = paletteHolder
 	Instance.new("UICorner", palette).CornerRadius = UDim.new(0, 8)
 
-	local pStroke = Instance.new("UIStroke")
+	local pStroke = Instance.new("UIStroke", palette)
 	pStroke.Color = Theme.Border
 	pStroke.Transparency = 0.35
-	pStroke.Parent = palette
-
-	local shadow = Instance.new("ImageLabel")
-	shadow.BackgroundTransparency = 1
-	shadow.Image = "rbxassetid://1316045217"
-	shadow.ScaleType = Enum.ScaleType.Slice
-	shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-	shadow.Size = UDim2.new(1, 20, 1, 20)
-	shadow.Position = UDim2.fromOffset(-10, -6)
-	shadow.ImageTransparency = 0.7
-	shadow.ZIndex = 99
-	shadow.Parent = paletteHolder
 
 	-- 顏色漸層
 	local hue = Instance.new("Frame")
@@ -621,6 +608,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	hue.BorderSizePixel = 0
 	hue.ClipsDescendants = true
 	hue.Parent = palette
+
 	local hueGradient = Instance.new("UIGradient")
 	hueGradient.Color = ColorSequence.new{
 		ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
@@ -633,22 +621,18 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	}
 	hueGradient.Parent = hue
 
-	local overlay = Instance.new("Frame")
+	local overlay = Instance.new("Frame", hue)
 	overlay.Size = UDim2.new(1, 0, 1, 0)
 	overlay.BackgroundColor3 = Color3.new(1, 1, 1)
 	overlay.BackgroundTransparency = 1
-	overlay.BorderSizePixel = 0
-	overlay.Parent = hue
-
-	local light = Instance.new("UIGradient")
+	local light = Instance.new("UIGradient", overlay)
 	light.Color = ColorSequence.new{
 		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
 	}
 	light.Rotation = 90
-	light.Parent = overlay
 
-	local dot = Instance.new("Frame")
+	local dot = Instance.new("Frame", hue)
 	dot.Size = UDim2.new(0, 8, 0, 8)
 	dot.AnchorPoint = Vector2.new(0.5, 0.5)
 	dot.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -656,10 +640,9 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	dot.BorderColor3 = Color3.new(0, 0, 0)
 	dot.BorderSizePixel = 1
 	dot.ZIndex = 102
-	dot.Parent = hue
 	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
 
-	-- 更新顏色函式
+	-- 更新顏色
 	local function updateColor(pos)
 		local x = math.clamp((pos.X - hue.AbsolutePosition.X) / hue.AbsoluteSize.X, 0, 1)
 		local y = math.clamp((pos.Y - hue.AbsolutePosition.Y) / hue.AbsoluteSize.Y, 0, 1)
@@ -669,41 +652,35 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 		if callback then pcall(callback, currentColor) end
 	end
 
-	-- 展開 / 收合
+	-- 開關顏色盤
 	local isOpen = false
 	toggleButton.MouseButton1Click:Connect(function()
 		isOpen = not isOpen
 		if isOpen then
+			local absPos = toggleButton.AbsolutePosition
+			paletteHolder.Position = UDim2.fromOffset(absPos.X + 45, absPos.Y + 30)
 			paletteHolder.Visible = true
-			TweenService:Create(paletteHolder, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
-				Size = UDim2.new(0, 200, 0, 130),
-				BackgroundTransparency = 0
-			}):Play()
+			TweenService:Create(paletteHolder, TweenInfo.new(0.25), {Size = UDim2.new(0, 200, 0, 130)}):Play()
 		else
-			TweenService:Create(paletteHolder, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
-				Size = UDim2.new(0, 200, 0, 0)
-			}):Play()
-			task.delay(0.25, function()
-				paletteHolder.Visible = false
-			end)
+			TweenService:Create(paletteHolder, TweenInfo.new(0.25), {Size = UDim2.new(0, 200, 0, 0)}):Play()
+			task.delay(0.25, function() paletteHolder.Visible = false end)
 		end
 	end)
 
-	-- 拖曳取色
 	local dragging = false
-	hue.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+	hue.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
-			updateColor(input.Position)
+			updateColor(i.Position)
 		end
 	end)
-	UIS.InputChanged:Connect(function(input)
-		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-			updateColor(input.Position)
+	UIS.InputChanged:Connect(function(i)
+		if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+			updateColor(i.Position)
 		end
 	end)
-	UIS.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+	UIS.InputEnded:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = false
 		end
 	end)
@@ -711,6 +688,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	self.NextY += 12
 	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
 end
+
 
 function SafeUILib:AddCustomButton(opts)
 	self.Buttons = self.Buttons or {}
@@ -1339,13 +1317,13 @@ function SafeUILib:AddTab(tabName)
 		stroke.Color = Color3.fromRGB(40, 50, 70)
 		stroke.Transparency = 0.4
 
-		local layout = Instance.new("UIListLayout")
-		layout.FillDirection = Enum.FillDirection.Horizontal
-		layout.SortOrder = Enum.SortOrder.LayoutOrder
-		layout.Padding = UDim.new(0, 6)
-		layout.Parent = tabBar
-        layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-		self.TabBar = tabBar
+local layout = Instance.new("UIListLayout")
+layout.FillDirection = Enum.FillDirection.Horizontal
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Padding = UDim.new(0, 10) 
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.VerticalAlignment = Enum.VerticalAlignment.Center
+layout.Parent = tabBar
 	end
 
 	-- 分頁按鈕
