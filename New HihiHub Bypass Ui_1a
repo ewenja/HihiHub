@@ -1027,29 +1027,34 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	end)
 
 	local open = false
-	colorBox.MouseButton1Click:Connect(function()
-		open = not open
-		local screenSize = workspace.CurrentCamera.ViewportSize
+colorBox.MouseButton1Click:Connect(function()
+	open = not open
+	local screenSize = workspace.CurrentCamera.ViewportSize
+
+	if open then
+		game:GetService("RunService").RenderStepped:Wait()
+
 		local pos = colorBox.AbsolutePosition
 		local px = math.clamp(pos.X + 60, 0, screenSize.X - 240)
 		local py = math.clamp(pos.Y - 10, 0, screenSize.Y - 200)
 
-		if open then
-			picker.Position = UDim2.fromOffset(px, py)
-			picker.Visible = true
-			picker.Size = UDim2.new(0, 220, 0, 0)
-			TweenService:Create(picker, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
-				Size = UDim2.new(0, 220, 0, 180)
-			}):Play()
-		else
-			TweenService:Create(picker, TweenInfo.new(0.25), {
-				Size = UDim2.new(0, 220, 0, 0)
-			}):Play()
-			task.delay(0.25, function() picker.Visible = false end)
-		end
-	end)
+		picker.Position = UDim2.fromOffset(px, py)
+		picker.Visible = true
+		picker.Size = UDim2.new(0, 220, 0, 0)
 
-end
+		TweenService:Create(picker, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+			Size = UDim2.new(0, 220, 0, 180)
+		}):Play()
+	else
+		TweenService:Create(picker, TweenInfo.new(0.25), {
+			Size = UDim2.new(0, 220, 0, 0)
+		}):Play()
+		task.delay(0.25, function()
+			picker.Visible = false
+		end)
+	end
+end)
+
 
 function SafeUILib:Notify(text, duration)
 	local TweenService = game:GetService("TweenService")
