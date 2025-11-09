@@ -209,7 +209,7 @@ function SafeUILib:AddButton(text, callback)
 	local name = "btn_" .. math.random(100000, 999999)
 	local parent = self:GetParentFrame()
 
-	-- 主題顏色（和 CreateWindow 一致）
+	-- 主題顏色
 	local Theme = {
 		Primary = Color3.fromRGB(24, 115, 235),
 		Surface = Color3.fromRGB(28, 34, 45),
@@ -602,7 +602,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	pStroke.Color = Theme.Border
 	pStroke.Transparency = 0.35
 
-	-- 立即建立 hue frame（不 defer）
+	-- 立即建立
 	local hue = Instance.new("Frame", picker)
 	hue.Size = UDim2.new(1, -20, 0, 100)
 	hue.Position = UDim2.new(0, 10, 0, 10)
@@ -646,7 +646,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 		if callback then pcall(callback, currentColor) end
 	end
 
-	-- 延遲一幀再綁事件，確保 hue.AbsolutePosition 存在
+	-- 延遲一幀再綁事件
 	task.defer(function()
 		local dragging = false
 		hue.InputBegan:Connect(function(i)
@@ -853,7 +853,7 @@ function SafeUILib:AddTextbox(label, defaultText, callback)
 		}):Play()
 	end)
 
-	-- 聚焦動畫（邊框亮起）
+	-- 聚焦動畫
 	textbox.Focused:Connect(function()
 		TweenService:Create(stroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
 			Color = Theme.Accent,
@@ -1130,7 +1130,7 @@ function SafeUILib:Notify(text, duration)
 	textLabel.Position = UDim2.new(0, 10, 0, 4)
 	textLabel.Parent = notify
 
-	-- 初始狀態 (滑入前)
+	-- 初始狀態
 	notify.Position = UDim2.new(1, 300, 1, -70)
 	notify.BackgroundTransparency = 1
 	textLabel.TextTransparency = 1
@@ -1669,7 +1669,7 @@ function SafeUILib:AddKeybind(labelText, defaultKey, callback)
 		button.Text = "[Press a key...]"
 		stroke.Color = Theme.Accent
 
-		-- 閃爍動畫（等待輸入）
+		-- 閃爍動畫
 		task.spawn(function()
 			while listening do
 				TweenService:Create(button, TweenInfo.new(0.3), {TextTransparency = 0.3}):Play()
@@ -1736,7 +1736,7 @@ function SafeUILib:SwitchTab(tabName)
 		end
 	end
 
-	-- 分頁按鈕同步高亮動畫
+--fuck all
 	for name, btn in pairs(self.TabButtons) do
 		local isActive = (name == tabName)
 		local highlight = btn:FindFirstChildOfClass("Frame")
