@@ -21,7 +21,7 @@ function SafeUILib:CreateWindow(opts)
 
 	local toggleKeys = opts.ToggleKeys or { Enum.KeyCode.RightControl, Enum.KeyCode.Insert }
 	local windowName = opts.Name or ("HihiHub_" .. math.random(10000, 99999))
-	local windowSize = opts.Size or UDim2.fromOffset(720, 480)
+	local windowSize = opts.Size or UDim2.fromOffset(640, 420)
 
 	-- ScreenGui
 	local gui = Instance.new("ScreenGui")
@@ -96,7 +96,7 @@ function SafeUILib:CreateWindow(opts)
 	sidebar.BackgroundColor3 = Theme.Sidebar
 	sidebar.BorderSizePixel = 0
 	sidebar.Position = UDim2.fromOffset(0, 46)
-	sidebar.Size = UDim2.new(0, 200, 1, -46)
+	sidebar.Size = UDim2.new(0, 160, 1, -46)
 	sidebar.Parent = root
 	Instance.new("UICorner", sidebar).CornerRadius = UDim.new(0, 6)
 
@@ -130,8 +130,8 @@ sbList.Parent = sbContainer
 	contentCard.Name = "ContentCard"
 	contentCard.BackgroundColor3 = Theme.Card
 	contentCard.BorderSizePixel = 0
-	contentCard.Position = UDim2.fromOffset(212, 58)
-	contentCard.Size = UDim2.new(1, -224, 1, -70)
+    contentCard.Position = UDim2.fromOffset(172, 58)
+    contentCard.Size = UDim2.new(1, -184, 1, -70)
 	contentCard.Parent = root
 	Instance.new("UICorner", contentCard).CornerRadius = UDim.new(0, 6)
 
