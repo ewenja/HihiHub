@@ -548,9 +548,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	local Theme = {
 		Text = Color3.fromRGB(228, 235, 245),
 		Surface = Color3.fromRGB(28, 34, 45),
-		Hover = Color3.fromRGB(38, 44, 60),
-		Border = Color3.fromRGB(40, 50, 70),
-		Shadow = Color3.fromRGB(10, 10, 15)
+		Border = Color3.fromRGB(40, 50, 70)
 	}
 
 	-- 標題
@@ -566,7 +564,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	title.Parent = parent
 	self.NextY += 26
 
-	-- 小按鈕
+	-- 按鈕
 	local toggleButton = Instance.new("TextButton")
 	toggleButton.Size = UDim2.new(0, 40, 0, 20)
 	toggleButton.Position = UDim2.new(0, 12, 0, self.NextY)
@@ -578,13 +576,11 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 5)
 	self.NextY += 34
 
-	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 1
+	local stroke = Instance.new("UIStroke", toggleButton)
 	stroke.Color = Theme.Border
 	stroke.Transparency = 0.35
-	stroke.Parent = toggleButton
 
-	-- 🧩 顏色盤 ScreenGui
+	-- ScreenGui 容器
 	local pickerGui = Instance.new("ScreenGui")
 	pickerGui.Name = "NativeColorPickerGUI"
 	pickerGui.ResetOnSpawn = false
@@ -599,59 +595,56 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	picker.ZIndex = 100
 	picker.Parent = pickerGui
 	Instance.new("UICorner", picker).CornerRadius = UDim.new(0, 8)
-
 	local pStroke = Instance.new("UIStroke", picker)
 	pStroke.Color = Theme.Border
 	pStroke.Transparency = 0.35
 
+	-- 立即建立 hue frame（不 defer）
+	local hue = Instance.new("Frame", picker)
+	hue.Size = UDim2.new(1, -20, 0, 100)
+	hue.Position = UDim2.new(0, 10, 0, 10)
+	hue.BorderSizePixel = 0
+	hue.ClipsDescendants = true
+	hue.ZIndex = 200
+
+	local hueGradient = Instance.new("UIGradient", hue)
+	hueGradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+		ColorSequenceKeypoint.new(0.16, Color3.fromRGB(255, 255, 0)),
+		ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+		ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
+		ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 0, 255)),
+		ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+		ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
+	}
+
+	local overlay = Instance.new("UIGradient", hue)
+	overlay.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.new(1,1,1)),
+		ColorSequenceKeypoint.new(1, Color3.new(0,0,0))
+	}
+	overlay.Rotation = 90
+
+	local dot = Instance.new("Frame", hue)
+	dot.Size = UDim2.new(0, 10, 0, 10)
+	dot.AnchorPoint = Vector2.new(0.5, 0.5)
+	dot.Position = UDim2.new(0.5, 0, 0.5, 0)
+	dot.BackgroundColor3 = Color3.new(1,1,1)
+	dot.BorderColor3 = Color3.new(0,0,0)
+	dot.BorderSizePixel = 1
+	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+
+	local function updateColor(pos)
+		local x = math.clamp((pos.X - hue.AbsolutePosition.X) / hue.AbsoluteSize.X, 0, 1)
+		local y = math.clamp((pos.Y - hue.AbsolutePosition.Y) / hue.AbsoluteSize.Y, 0, 1)
+		currentColor = Color3.fromHSV(x, 1, 1 - y)
+		toggleButton.BackgroundColor3 = currentColor
+		dot.Position = UDim2.new(x, 0, y, 0)
+		if callback then pcall(callback, currentColor) end
+	end
+
+	-- 延遲一幀再綁事件，確保 hue.AbsolutePosition 存在
 	task.defer(function()
-		-- 顏色漸層區
-		local hue = Instance.new("Frame")
-		hue.Size = UDim2.new(1, -20, 0, 100)
-		hue.Position = UDim2.new(0, 10, 0, 10)
-		hue.BorderSizePixel = 0
-		hue.ClipsDescendants = true
-		hue.ZIndex = 200
-		hue.Parent = picker
-
-		local hueGradient = Instance.new("UIGradient", hue)
-		hueGradient.Color = ColorSequence.new{
-			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
-			ColorSequenceKeypoint.new(0.16, Color3.fromRGB(255, 255, 0)),
-			ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
-			ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
-			ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 0, 255)),
-			ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
-			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
-		}
-
-		local overlay = Instance.new("UIGradient", hue)
-		overlay.Color = ColorSequence.new{
-			ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
-			ColorSequenceKeypoint.new(1, Color3.new(0, 0, 0))
-		}
-		overlay.Rotation = 90
-
-		local dot = Instance.new("Frame", hue)
-		dot.Size = UDim2.new(0, 10, 0, 10)
-		dot.AnchorPoint = Vector2.new(0.5, 0.5)
-		dot.Position = UDim2.new(0.5, 0, 0.5, 0)
-		dot.BackgroundColor3 = Color3.new(1, 1, 1)
-		dot.BorderColor3 = Color3.new(0, 0, 0)
-		dot.BorderSizePixel = 1
-		dot.ZIndex = 201
-		Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
-
-		local function updateColor(pos)
-			local x = math.clamp((pos.X - hue.AbsolutePosition.X) / hue.AbsoluteSize.X, 0, 1)
-			local y = math.clamp((pos.Y - hue.AbsolutePosition.Y) / hue.AbsoluteSize.Y, 0, 1)
-			currentColor = Color3.fromHSV(x, 1, 1 - y)
-			toggleButton.BackgroundColor3 = currentColor
-			dot.Position = UDim2.new(x, 0, y, 0)
-			if callback then pcall(callback, currentColor) end
-		end
-
-		-- 拖曳事件
 		local dragging = false
 		hue.InputBegan:Connect(function(i)
 			if i.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -671,7 +664,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 		end)
 	end)
 
-	-- 彈出 / 收起
+	-- 顯示 / 收起
 	local isOpen = false
 	toggleButton.MouseButton1Click:Connect(function()
 		isOpen = not isOpen
@@ -690,6 +683,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 	self.NextY += 12
 	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
 end
+
 
 
 function SafeUILib:AddCustomButton(opts)
