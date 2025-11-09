@@ -1,4 +1,7 @@
 --bypass HihiHub Gui
+--Open Source
+--bypass Deadline Anti cheat
+
 local SafeUILib = {}
 SafeUILib.__index = SafeUILib
 
