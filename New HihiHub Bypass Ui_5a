@@ -1028,18 +1028,20 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 
 	local open = false
 local RunService = game:GetService("RunService")
+local activeTween -- 放在外面存動畫狀態
 
 colorBox.MouseButton1Click:Connect(function()
-	-- 若動畫還沒結束就再點，直接中斷前一個
-	if picker.__tween then
-		picker.__tween:Cancel()
+	-- 若上次動畫沒結束就取消
+	if activeTween then
+		activeTween:Cancel()
+		activeTween = nil
 	end
 
 	open = not open
 	local screenSize = workspace.CurrentCamera.ViewportSize
 
 	if open then
-		-- 等 GUI 完全渲染（這樣 AbsolutePosition 才正確）
+		-- 等 GUI 完全渲染
 		RunService.RenderStepped:Wait()
 		task.defer(function()
 			local pos = colorBox.AbsolutePosition
@@ -1051,26 +1053,26 @@ colorBox.MouseButton1Click:Connect(function()
 			picker.Position = UDim2.fromOffset(px, py)
 
 			-- 動畫打開
-			local tween = TweenService:Create(picker, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+			activeTween = TweenService:Create(picker, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
 				Size = UDim2.new(0, 220, 0, 180)
 			})
-			picker.__tween = tween
-			tween:Play()
+			activeTween:Play()
 		end)
 	else
 		-- 動畫關閉
-		local tween = TweenService:Create(picker, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+		activeTween = TweenService:Create(picker, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
 			Size = UDim2.new(0, 220, 0, 0)
 		})
-		picker.__tween = tween
-		tween:Play()
-		tween.Completed:Once(function()
+		activeTween:Play()
+		activeTween.Completed:Once(function()
 			if not open then
 				picker.Visible = false
 			end
+			activeTween = nil
 		end)
 	end
 end)
+
 end
 
 function SafeUILib:Notify(text, duration)
