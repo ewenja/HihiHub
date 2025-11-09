@@ -873,13 +873,13 @@ function SafeUILib:AddTextbox(label, defaultText, callback)
 	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
 end
 function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
-	self.Buttons = self.Buttons or {}
-	local parent = self:GetParentFrame()
 	local UIS = game:GetService("UserInputService")
 	local TweenService = game:GetService("TweenService")
 	local CoreGui = game:GetService("CoreGui")
 
+	local parent = self:GetParentFrame()
 	local currentColor = defaultColor or Color3.fromRGB(255, 255, 255)
+
 	local Theme = {
 		Surface = Color3.fromRGB(28, 34, 45),
 		Text = Color3.fromRGB(228, 235, 245),
@@ -901,42 +901,57 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	title.Parent = parent
 	self.NextY += 26
 
-	-- 顏色預覽
+	-- 顏色按鈕
 	local colorBox = Instance.new("TextButton")
 	colorBox.Size = UDim2.new(0, 40, 0, 20)
 	colorBox.Position = UDim2.new(0, 12, 0, self.NextY)
 	colorBox.BackgroundColor3 = currentColor
-	colorBox.AutoButtonColor = false
 	colorBox.Text = ""
 	colorBox.BorderSizePixel = 0
-	colorBox.ZIndex = 50
+	colorBox.AutoButtonColor = false
 	colorBox.Parent = parent
 	Instance.new("UICorner", colorBox).CornerRadius = UDim.new(0, 5)
-	self.NextY += 36
+	self.NextY += 34
 
 	local stroke = Instance.new("UIStroke", colorBox)
 	stroke.Color = Theme.Border
 	stroke.Transparency = 0.35
 
--- 顏色盤浮窗
-local pickerGui = Instance.new("ScreenGui")
-pickerGui.Name = "TailwindPickerGUI"
-pickerGui.ResetOnSpawn = false
-pickerGui.IgnoreGuiInset = true
-pickerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-pickerGui.Parent = CoreGui
+	-- Picker GUI
+	local pickerGui = Instance.new("ScreenGui")
+	pickerGui.Name = "TailwindPickerGUI"
+	pickerGui.IgnoreGuiInset = true
+	pickerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	pickerGui.ResetOnSpawn = false
+	pickerGui.Parent = CoreGui
 
-local picker = Instance.new("Frame")
-picker.Name = "TailwindPicker"
-picker.Size = UDim2.new(0, 220, 0, 180)
-picker.BackgroundColor3 = Theme.Surface
-picker.Visible = false
-picker.ZIndex = 9999
-picker.Parent = pickerGui
-Instance.new("UICorner", picker).CornerRadius = UDim.new(0, 8)
-local pStroke = Instance.new("UIStroke", picker)
-pStroke.Color = Theme.Border
-pStroke.Transparency = 0.4
+	local picker = Instance.new("Frame")
+	picker.Name = "TailwindPicker"
+	picker.Size = UDim2.new(0, 220, 0, 180)
+	picker.Position = UDim2.new(0, 0, 0, 0)
+	picker.BackgroundColor3 = Theme.Surface
+	picker.Visible = false
+	picker.ZIndex = 9999
+	picker.Parent = pickerGui
+	picker.ClipsDescendants = true
+	Instance.new("UICorner", picker).CornerRadius = UDim.new(0, 8)
+
+	local pStroke = Instance.new("UIStroke", picker)
+	pStroke.Color = Theme.Border
+	pStroke.Transparency = 0.4
+
+	picker:GetPropertyChangedSignal("Parent"):Connect(function()
+		if not picker.Parent then return end
+	end)
+
+	-- 顏色區域
+	local colorArea = Instance.new("Frame")
+	colorArea.Size = UDim2.new(1, -20, 0, 120)
+	colorArea.Position = UDim2.new(0, 10, 0, 10)
+	colorArea.BorderSizePixel = 0
+	colorArea.ClipsDescendants = true
+	colorArea.ZIndex = 10000
+	colorArea.Parent = picker
 
 	local hueGradient = Instance.new("UIGradient", colorArea)
 	hueGradient.Color = ColorSequence.new{
@@ -964,46 +979,39 @@ pStroke.Transparency = 0.4
 	dot.ZIndex = 10001
 	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
 
-	-- 色條
-	local hueBar = Instance.new("Frame", picker)
-	hueBar.Size = UDim2.new(1, -20, 0, 10)
-	hueBar.Position = UDim2.new(0, 10, 0, 140)
-	hueBar.BorderSizePixel = 0
-	local hueBarGrad = Instance.new("UIGradient", hueBar)
-	hueBarGrad.Color = hueGradient.Color
-	local hueKnob = Instance.new("Frame", hueBar)
-	hueKnob.Size = UDim2.new(0, 10, 0, 10)
-	hueKnob.AnchorPoint = Vector2.new(0.5, 0.5)
-	hueKnob.Position = UDim2.new(0.5, 0, 0.5, 0)
-	hueKnob.BackgroundColor3 = Color3.new(1,1,1)
-	hueKnob.BorderColor3 = Color3.new(0,0,0)
-	Instance.new("UICorner", hueKnob).CornerRadius = UDim.new(1, 0)
+	local draggingColor = false
+	local hue = 0
 
-	-- HEX 輸入
-	local hexBox = Instance.new("TextBox", picker)
-	hexBox.Size = UDim2.new(0, 90, 0, 24)
-	hexBox.Position = UDim2.new(0, 10, 0, 155)
-	hexBox.BackgroundColor3 = Theme.InputBg
-	hexBox.TextColor3 = Theme.Text
-	hexBox.Text = "#" .. string.format("%02X%02X%02X", currentColor.R*255, currentColor.G*255, currentColor.B*255)
-	hexBox.Font = Enum.Font.Code
-	hexBox.TextSize = 14
-	hexBox.BorderSizePixel = 0
-	Instance.new("UICorner", hexBox).CornerRadius = UDim.new(0, 4)
+	local function updateColor(x, y)
+		local sx = math.clamp((x - colorArea.AbsolutePosition.X) / colorArea.AbsoluteSize.X, 0, 1)
+		local sy = math.clamp((y - colorArea.AbsolutePosition.Y) / colorArea.AbsoluteSize.Y, 0, 1)
+		dot.Position = UDim2.new(sx, 0, sy, 0)
+		currentColor = Color3.fromHSV(hue, sx, 1 - sy)
+		colorBox.BackgroundColor3 = currentColor
+	end
 
-	local apply = Instance.new("TextButton", picker)
-	apply.Size = UDim2.new(0, 60, 0, 24)
-	apply.Position = UDim2.new(1, -70, 0, 155)
-	apply.BackgroundColor3 = Theme.Accent
-	apply.Text = "Apply"
-	apply.TextColor3 = Color3.new(1,1,1)
-	apply.Font = Enum.Font.GothamSemibold
-	apply.TextSize = 14
-	apply.AutoButtonColor = false
-	apply.BorderSizePixel = 0
-	Instance.new("UICorner", apply).CornerRadius = UDim.new(0, 4)
+	task.spawn(function()
+		task.wait(0.05)
+		colorArea.InputBegan:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.MouseButton1 then
+				draggingColor = true
+				updateColor(i.Position.X, i.Position.Y)
+			end
+		end)
+	end)
 
-	-- 彈出
+	UIS.InputChanged:Connect(function(i)
+		if draggingColor and i.UserInputType == Enum.UserInputType.MouseMovement then
+			updateColor(i.Position.X, i.Position.Y)
+		end
+	end)
+	UIS.InputEnded:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+			draggingColor = false
+		end
+	end)
+
+	-- 開關 picker
 	local open = false
 	colorBox.MouseButton1Click:Connect(function()
 		open = not open
@@ -1022,79 +1030,8 @@ pStroke.Transparency = 0.4
 			task.delay(0.25, function() picker.Visible = false end)
 		end
 	end)
-
-	-- 顏色選取
-	local draggingColor, draggingHue = false, false
-	local hue = 0
-	local function updateColor(x, y)
-		local sx = math.clamp((x - colorArea.AbsolutePosition.X) / colorArea.AbsoluteSize.X, 0, 1)
-		local sy = math.clamp((y - colorArea.AbsolutePosition.Y) / colorArea.AbsoluteSize.Y, 0, 1)
-		dot.Position = UDim2.new(sx, 0, sy, 0)
-		currentColor = Color3.fromHSV(hue, sx, 1 - sy)
-		colorBox.BackgroundColor3 = currentColor
-		hexBox.Text = "#" .. string.format("%02X%02X%02X", currentColor.R*255, currentColor.G*255, currentColor.B*255)
-	end
-	local function updateHue(x)
-		local pct = math.clamp((x - hueBar.AbsolutePosition.X) / hueBar.AbsoluteSize.X, 0, 1)
-		hueKnob.Position = UDim2.new(pct, 0, 0.5, 0)
-		hue = pct
-		updateColor(dot.AbsolutePosition.X, dot.AbsolutePosition.Y)
-	end
-
-	colorArea.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 then
-			draggingColor = true
-			updateColor(i.Position.X, i.Position.Y)
-		end
-	end)
-	hueBar.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 then
-			draggingHue = true
-			updateHue(i.Position.X)
-		end
-	end)
-	UIS.InputChanged:Connect(function(i)
-		if draggingColor and i.UserInputType == Enum.UserInputType.MouseMovement then
-			updateColor(i.Position.X, i.Position.Y)
-		elseif draggingHue and i.UserInputType == Enum.UserInputType.MouseMovement then
-			updateHue(i.Position.X)
-		end
-	end)
-	UIS.InputEnded:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 then
-			draggingColor, draggingHue = false, false
-		end
-	end)
-
-	-- HEX 輸入
-	hexBox.FocusLost:Connect(function(enter)
-		if enter then
-			local hex = hexBox.Text:gsub("#","")
-			if #hex == 6 then
-				local r = tonumber(hex:sub(1,2),16)
-				local g = tonumber(hex:sub(3,4),16)
-				local b = tonumber(hex:sub(5,6),16)
-				if r and g and b then
-					currentColor = Color3.fromRGB(r,g,b)
-					colorBox.BackgroundColor3 = currentColor
-				end
-			end
-		end
-	end)
-
-	-- Apply
-	apply.MouseButton1Click:Connect(function()
-		if callback then
-			pcall(callback, currentColor)
-		end
-		open = false
-		TweenService:Create(picker, TweenInfo.new(0.25), {Size = UDim2.new(0, 220, 0, 0)}):Play()
-		task.delay(0.25, function() picker.Visible = false end)
-	end)
-
-	self.NextY += 10
-	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
 end
+
 
 function SafeUILib:Notify(text, duration)
 	local TweenService = game:GetService("TweenService")
