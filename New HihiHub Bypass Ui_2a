@@ -1054,7 +1054,7 @@ colorBox.MouseButton1Click:Connect(function()
 		end)
 	end
 end)
-
+end
 
 function SafeUILib:Notify(text, duration)
 	local TweenService = game:GetService("TweenService")
