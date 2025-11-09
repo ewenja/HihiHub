@@ -1308,21 +1308,6 @@ function SafeUILib:AddTab(tabName)
 		self.Scroll = scrollFrame
 	end
 
-		Instance.new("UICorner", tabBar).CornerRadius = UDim.new(0, 8)
-
-		local stroke = Instance.new("UIStroke", tabBar)
-		stroke.Color = Color3.fromRGB(40, 50, 70)
-		stroke.Transparency = 0.4
-
-local layout = Instance.new("UIListLayout")
-layout.FillDirection = Enum.FillDirection.Horizontal
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-layout.Padding = UDim.new(0, 10) 
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-layout.VerticalAlignment = Enum.VerticalAlignment.Center
-layout.Parent = tabBar
-	end
-
 	-- 分頁按鈕
 	local button = Instance.new("TextButton")
 	button.Name = "TabButton_" .. tabName
