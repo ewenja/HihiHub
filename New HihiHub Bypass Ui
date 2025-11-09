@@ -1317,7 +1317,7 @@ function SafeUILib:AddTab(tabName)
 		scrollFrame.Size = UDim2.new(1, 0, 1, -40)
 		scrollFrame.Position = UDim2.new(0, 0, 0, 40)
 		scrollFrame.BackgroundTransparency = 1
-		scrollFrame.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
+		scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 		scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 		scrollFrame.ScrollBarThickness = 6
 		scrollFrame.Parent = self.ContentCard or parentFrame
@@ -1377,7 +1377,7 @@ function SafeUILib:AddTab(tabName)
 	tabFrame.Size = UDim2.new(1, 0, 1, -40)
 	tabFrame.Position = UDim2.new(0, 0, 0, 40)
 	tabFrame.BackgroundTransparency = 1
-	tabFrame.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
+	tabFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	tabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 	tabFrame.ScrollBarThickness = 4
 	tabFrame.Visible = false
