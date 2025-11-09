@@ -882,6 +882,221 @@ function SafeUILib:AddTextbox(label, defaultText, callback)
 	self.NextY += 46
 	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
 end
+function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
+	self.Buttons = self.Buttons or {}
+	local parent = self:GetParentFrame()
+	local currentColor = defaultColor or Color3.fromRGB(255, 255, 255)
+
+	local Theme = {
+		Surface = Color3.fromRGB(28, 34, 45),
+		Text = Color3.fromRGB(228, 235, 245),
+		Accent = Color3.fromRGB(35, 135, 255),
+		Border = Color3.fromRGB(50, 60, 80),
+		InputBg = Color3.fromRGB(22, 26, 34)
+	}
+
+	-- 標題
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Text = label or "Theme Color"
+	title.Font = Enum.Font.Gotham
+	title.TextSize = 15
+	title.TextColor3 = Theme.Text
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Size = UDim2.new(1, -24, 0, 24)
+	title.Position = UDim2.new(0, 12, 0, self.NextY)
+	title.Parent = parent
+	self.NextY += 26
+
+	-- 顏色預覽方塊
+	local colorBox = Instance.new("TextButton")
+	colorBox.Size = UDim2.new(0, 40, 0, 20)
+	colorBox.Position = UDim2.new(0, 12, 0, self.NextY)
+	colorBox.BackgroundColor3 = currentColor
+	colorBox.AutoButtonColor = false
+	colorBox.Text = ""
+	colorBox.BorderSizePixel = 0
+	colorBox.Parent = parent
+	Instance.new("UICorner", colorBox).CornerRadius = UDim.new(0, 5)
+	self.NextY += 36
+
+	local stroke = Instance.new("UIStroke", colorBox)
+	stroke.Color = Theme.Border
+	stroke.Transparency = 0.35
+
+	-- 顏色盤浮窗
+	local picker = Instance.new("Frame")
+	picker.Size = UDim2.new(0, 220, 0, 180)
+	picker.BackgroundColor3 = Theme.Surface
+	picker.Visible = false
+	picker.Parent = game:GetService("CoreGui")
+	picker.ZIndex = 100
+	Instance.new("UICorner", picker).CornerRadius = UDim.new(0, 8)
+	local pickerStroke = Instance.new("UIStroke", picker)
+	pickerStroke.Color = Theme.Border
+	pickerStroke.Transparency = 0.4
+
+	-- 主色盤
+	local colorArea = Instance.new("Frame", picker)
+	colorArea.Size = UDim2.new(1, -20, 0, 120)
+	colorArea.Position = UDim2.new(0, 10, 0, 10)
+	colorArea.BorderSizePixel = 0
+	colorArea.ClipsDescendants = true
+
+	local hueGradient = Instance.new("UIGradient", colorArea)
+	hueGradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+		ColorSequenceKeypoint.new(0.16, Color3.fromRGB(255, 255, 0)),
+		ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+		ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
+		ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 0, 255)),
+		ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+		ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
+	}
+
+	local brightness = Instance.new("UIGradient", colorArea)
+	brightness.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.new(1,1,1)),
+		ColorSequenceKeypoint.new(1, Color3.new(0,0,0))
+	}
+	brightness.Rotation = 90
+
+	local dot = Instance.new("Frame", colorArea)
+	dot.Size = UDim2.new(0, 10, 0, 10)
+	dot.AnchorPoint = Vector2.new(0.5, 0.5)
+	dot.Position = UDim2.new(0.5, 0, 0.5, 0)
+	dot.BackgroundColor3 = Color3.new(1, 1, 1)
+	dot.BorderColor3 = Color3.new(0, 0, 0)
+	dot.ZIndex = 101
+	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+
+	-- 色條（Hue）
+	local hueBar = Instance.new("Frame", picker)
+	hueBar.Size = UDim2.new(1, -20, 0, 10)
+	hueBar.Position = UDim2.new(0, 10, 0, 140)
+	hueBar.BorderSizePixel = 0
+	local hueGradientBar = Instance.new("UIGradient", hueBar)
+	hueGradientBar.Color = hueGradient.Color
+
+	local hueKnob = Instance.new("Frame", hueBar)
+	hueKnob.Size = UDim2.new(0, 10, 0, 10)
+	hueKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+	hueKnob.Position = UDim2.new(0.5, 0, 0.5, 0)
+	hueKnob.BackgroundColor3 = Color3.new(1, 1, 1)
+	hueKnob.BorderColor3 = Color3.new(0, 0, 0)
+	Instance.new("UICorner", hueKnob).CornerRadius = UDim.new(1, 0)
+
+	-- HEX 輸入
+	local hexBox = Instance.new("TextBox", picker)
+	hexBox.Size = UDim2.new(0, 80, 0, 24)
+	hexBox.Position = UDim2.new(0, 10, 0, 155)
+	hexBox.BackgroundColor3 = Theme.InputBg
+	hexBox.TextColor3 = Theme.Text
+	hexBox.Text = "#" .. string.format("%02X%02X%02X", currentColor.R*255, currentColor.G*255, currentColor.B*255)
+	hexBox.Font = Enum.Font.Code
+	hexBox.TextSize = 14
+	hexBox.BorderSizePixel = 0
+	Instance.new("UICorner", hexBox).CornerRadius = UDim.new(0, 4)
+
+	-- Apply 按鈕
+	local apply = Instance.new("TextButton", picker)
+	apply.Size = UDim2.new(0, 60, 0, 24)
+	apply.Position = UDim2.new(1, -70, 0, 155)
+	apply.BackgroundColor3 = Theme.Accent
+	apply.Text = "Apply"
+	apply.TextColor3 = Color3.new(1,1,1)
+	apply.Font = Enum.Font.GothamSemibold
+	apply.TextSize = 14
+	apply.AutoButtonColor = false
+	apply.BorderSizePixel = 0
+	Instance.new("UICorner", apply).CornerRadius = UDim.new(0, 4)
+
+	-- 開關色盤
+	local open = false
+	colorBox.MouseButton1Click:Connect(function()
+		open = not open
+		if open then
+			local pos = colorBox.AbsolutePosition
+			picker.Position = UDim2.fromOffset(pos.X + 50, pos.Y + 30)
+			picker.Visible = true
+		else
+			picker.Visible = false
+		end
+	end)
+
+	-- 色盤拖曳
+	local UIS = game:GetService("UserInputService")
+	local draggingColor, draggingHue = false, false
+	local hue = 0
+	local function updateColor(x, y)
+		local sx = math.clamp((x - colorArea.AbsolutePosition.X) / colorArea.AbsoluteSize.X, 0, 1)
+		local sy = math.clamp((y - colorArea.AbsolutePosition.Y) / colorArea.AbsoluteSize.Y, 0, 1)
+		dot.Position = UDim2.new(sx, 0, sy, 0)
+		currentColor = Color3.fromHSV(hue, sx, 1 - sy)
+		colorBox.BackgroundColor3 = currentColor
+		hexBox.Text = "#" .. string.format("%02X%02X%02X", currentColor.R*255, currentColor.G*255, currentColor.B*255)
+	end
+
+	local function updateHue(x)
+		local pct = math.clamp((x - hueBar.AbsolutePosition.X) / hueBar.AbsoluteSize.X, 0, 1)
+		hueKnob.Position = UDim2.new(pct, 0, 0.5, 0)
+		hue = pct
+		updateColor(dot.AbsolutePosition.X, dot.AbsolutePosition.Y)
+	end
+
+	colorArea.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+			draggingColor = true
+			updateColor(i.Position.X, i.Position.Y)
+		end
+	end)
+	hueBar.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+			draggingHue = true
+			updateHue(i.Position.X)
+		end
+	end)
+	UIS.InputChanged:Connect(function(i)
+		if draggingColor and i.UserInputType == Enum.UserInputType.MouseMovement then
+			updateColor(i.Position.X, i.Position.Y)
+		elseif draggingHue and i.UserInputType == Enum.UserInputType.MouseMovement then
+			updateHue(i.Position.X)
+		end
+	end)
+	UIS.InputEnded:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+			draggingColor, draggingHue = false, false
+		end
+	end)
+
+	-- HEX 輸入更新
+	hexBox.FocusLost:Connect(function(enter)
+		if enter then
+			local hex = hexBox.Text:gsub("#","")
+			if #hex == 6 then
+				local r = tonumber(hex:sub(1,2),16)
+				local g = tonumber(hex:sub(3,4),16)
+				local b = tonumber(hex:sub(5,6),16)
+				if r and g and b then
+					currentColor = Color3.fromRGB(r,g,b)
+					colorBox.BackgroundColor3 = currentColor
+				end
+			end
+		end
+	end)
+
+	-- Apply 動作
+	apply.MouseButton1Click:Connect(function()
+		if callback then
+			pcall(callback, currentColor)
+		end
+		picker.Visible = false
+		open = false
+	end)
+
+	self.NextY += 10
+	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
+end
 function SafeUILib:Notify(text, duration)
 	local TweenService = game:GetService("TweenService")
 
