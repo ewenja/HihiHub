@@ -885,8 +885,11 @@ end
 function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	self.Buttons = self.Buttons or {}
 	local parent = self:GetParentFrame()
-	local currentColor = defaultColor or Color3.fromRGB(255, 255, 255)
+	local UIS = game:GetService("UserInputService")
+	local TweenService = game:GetService("TweenService")
+	local CoreGui = game:GetService("CoreGui")
 
+	local currentColor = defaultColor or Color3.fromRGB(255, 255, 255)
 	local Theme = {
 		Surface = Color3.fromRGB(28, 34, 45),
 		Text = Color3.fromRGB(228, 235, 245),
@@ -908,7 +911,7 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	title.Parent = parent
 	self.NextY += 26
 
-	-- 顏色預覽方塊
+	-- 顏色預覽
 	local colorBox = Instance.new("TextButton")
 	colorBox.Size = UDim2.new(0, 40, 0, 20)
 	colorBox.Position = UDim2.new(0, 12, 0, self.NextY)
@@ -916,6 +919,7 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	colorBox.AutoButtonColor = false
 	colorBox.Text = ""
 	colorBox.BorderSizePixel = 0
+	colorBox.ZIndex = 50
 	colorBox.Parent = parent
 	Instance.new("UICorner", colorBox).CornerRadius = UDim.new(0, 5)
 	self.NextY += 36
@@ -924,17 +928,19 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	stroke.Color = Theme.Border
 	stroke.Transparency = 0.35
 
-	-- 顏色盤浮窗
+	-- 🎨 顏色盤浮窗
 	local picker = Instance.new("Frame")
+	picker.Name = "TailwindPicker"
 	picker.Size = UDim2.new(0, 220, 0, 180)
 	picker.BackgroundColor3 = Theme.Surface
 	picker.Visible = false
-	picker.Parent = game:GetService("CoreGui")
-	picker.ZIndex = 100
+	picker.ZIndex = 9999
+	picker.Parent = CoreGui
+	picker.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	Instance.new("UICorner", picker).CornerRadius = UDim.new(0, 8)
-	local pickerStroke = Instance.new("UIStroke", picker)
-	pickerStroke.Color = Theme.Border
-	pickerStroke.Transparency = 0.4
+	local pStroke = Instance.new("UIStroke", picker)
+	pStroke.Color = Theme.Border
+	pStroke.Transparency = 0.4
 
 	-- 主色盤
 	local colorArea = Instance.new("Frame", picker)
@@ -942,6 +948,7 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	colorArea.Position = UDim2.new(0, 10, 0, 10)
 	colorArea.BorderSizePixel = 0
 	colorArea.ClipsDescendants = true
+	colorArea.ZIndex = 10000
 
 	local hueGradient = Instance.new("UIGradient", colorArea)
 	hueGradient.Color = ColorSequence.new{
@@ -953,42 +960,40 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 		ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
 		ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
 	}
-
-	local brightness = Instance.new("UIGradient", colorArea)
-	brightness.Color = ColorSequence.new{
+	local overlay = Instance.new("UIGradient", colorArea)
+	overlay.Color = ColorSequence.new{
 		ColorSequenceKeypoint.new(0, Color3.new(1,1,1)),
 		ColorSequenceKeypoint.new(1, Color3.new(0,0,0))
 	}
-	brightness.Rotation = 90
+	overlay.Rotation = 90
 
 	local dot = Instance.new("Frame", colorArea)
 	dot.Size = UDim2.new(0, 10, 0, 10)
 	dot.AnchorPoint = Vector2.new(0.5, 0.5)
 	dot.Position = UDim2.new(0.5, 0, 0.5, 0)
-	dot.BackgroundColor3 = Color3.new(1, 1, 1)
-	dot.BorderColor3 = Color3.new(0, 0, 0)
-	dot.ZIndex = 101
+	dot.BackgroundColor3 = Color3.new(1,1,1)
+	dot.BorderColor3 = Color3.new(0,0,0)
+	dot.ZIndex = 10001
 	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
 
-	-- 色條（Hue）
+	-- 色條
 	local hueBar = Instance.new("Frame", picker)
 	hueBar.Size = UDim2.new(1, -20, 0, 10)
 	hueBar.Position = UDim2.new(0, 10, 0, 140)
 	hueBar.BorderSizePixel = 0
-	local hueGradientBar = Instance.new("UIGradient", hueBar)
-	hueGradientBar.Color = hueGradient.Color
-
+	local hueBarGrad = Instance.new("UIGradient", hueBar)
+	hueBarGrad.Color = hueGradient.Color
 	local hueKnob = Instance.new("Frame", hueBar)
 	hueKnob.Size = UDim2.new(0, 10, 0, 10)
 	hueKnob.AnchorPoint = Vector2.new(0.5, 0.5)
 	hueKnob.Position = UDim2.new(0.5, 0, 0.5, 0)
-	hueKnob.BackgroundColor3 = Color3.new(1, 1, 1)
-	hueKnob.BorderColor3 = Color3.new(0, 0, 0)
+	hueKnob.BackgroundColor3 = Color3.new(1,1,1)
+	hueKnob.BorderColor3 = Color3.new(0,0,0)
 	Instance.new("UICorner", hueKnob).CornerRadius = UDim.new(1, 0)
 
 	-- HEX 輸入
 	local hexBox = Instance.new("TextBox", picker)
-	hexBox.Size = UDim2.new(0, 80, 0, 24)
+	hexBox.Size = UDim2.new(0, 90, 0, 24)
 	hexBox.Position = UDim2.new(0, 10, 0, 155)
 	hexBox.BackgroundColor3 = Theme.InputBg
 	hexBox.TextColor3 = Theme.Text
@@ -998,7 +1003,6 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	hexBox.BorderSizePixel = 0
 	Instance.new("UICorner", hexBox).CornerRadius = UDim.new(0, 4)
 
-	-- Apply 按鈕
 	local apply = Instance.new("TextButton", picker)
 	apply.Size = UDim2.new(0, 60, 0, 24)
 	apply.Position = UDim2.new(1, -70, 0, 155)
@@ -1011,21 +1015,27 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	apply.BorderSizePixel = 0
 	Instance.new("UICorner", apply).CornerRadius = UDim.new(0, 4)
 
-	-- 開關色盤
+	-- 彈出
 	local open = false
 	colorBox.MouseButton1Click:Connect(function()
 		open = not open
 		if open then
 			local pos = colorBox.AbsolutePosition
-			picker.Position = UDim2.fromOffset(pos.X + 50, pos.Y + 30)
+			picker.Position = UDim2.fromOffset(pos.X + 50, pos.Y + 25)
 			picker.Visible = true
+			picker.Size = UDim2.new(0, 220, 0, 0)
+			TweenService:Create(picker, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+				Size = UDim2.new(0, 220, 0, 180)
+			}):Play()
 		else
-			picker.Visible = false
+			TweenService:Create(picker, TweenInfo.new(0.25), {
+				Size = UDim2.new(0, 220, 0, 0)
+			}):Play()
+			task.delay(0.25, function() picker.Visible = false end)
 		end
 	end)
 
-	-- 色盤拖曳
-	local UIS = game:GetService("UserInputService")
+	-- 顏色選取
 	local draggingColor, draggingHue = false, false
 	local hue = 0
 	local function updateColor(x, y)
@@ -1036,7 +1046,6 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 		colorBox.BackgroundColor3 = currentColor
 		hexBox.Text = "#" .. string.format("%02X%02X%02X", currentColor.R*255, currentColor.G*255, currentColor.B*255)
 	end
-
 	local function updateHue(x)
 		local pct = math.clamp((x - hueBar.AbsolutePosition.X) / hueBar.AbsoluteSize.X, 0, 1)
 		hueKnob.Position = UDim2.new(pct, 0, 0.5, 0)
@@ -1069,7 +1078,7 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 		end
 	end)
 
-	-- HEX 輸入更新
+	-- HEX 輸入
 	hexBox.FocusLost:Connect(function(enter)
 		if enter then
 			local hex = hexBox.Text:gsub("#","")
@@ -1085,18 +1094,20 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 		end
 	end)
 
-	-- Apply 動作
+	-- Apply
 	apply.MouseButton1Click:Connect(function()
 		if callback then
 			pcall(callback, currentColor)
 		end
-		picker.Visible = false
 		open = false
+		TweenService:Create(picker, TweenInfo.new(0.25), {Size = UDim2.new(0, 220, 0, 0)}):Play()
+		task.delay(0.25, function() picker.Visible = false end)
 	end)
 
 	self.NextY += 10
 	self.Frame.CanvasSize = UDim2.new(0, 0, 0, self.NextY + 10)
 end
+
 function SafeUILib:Notify(text, duration)
 	local TweenService = game:GetService("TweenService")
 
