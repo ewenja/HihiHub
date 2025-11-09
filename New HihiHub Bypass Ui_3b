@@ -879,7 +879,6 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 
 	local parent = self:GetParentFrame()
 	local currentColor = defaultColor or Color3.fromRGB(255, 255, 255)
-
 	local tabId = "Tailwind_" .. tostring(math.random(100000, 999999))
 
 	local Theme = {
@@ -920,6 +919,7 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	stroke.Color = Theme.Border
 	stroke.Transparency = 0.35
 
+	-- Picker GUI
 	local pickerGui = Instance.new("ScreenGui")
 	pickerGui.Name = "TailwindPickerGUI_" .. tabId
 	pickerGui.IgnoreGuiInset = true
@@ -941,9 +941,8 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	pStroke.Color = Theme.Border
 	pStroke.Transparency = 0.4
 
-	-- 顏色盤
+	-- 主色盤
 	local colorArea = Instance.new("Frame")
-	colorArea.Name = "ColorArea_" .. tabId
 	colorArea.Size = UDim2.new(1, -20, 0, 120)
 	colorArea.Position = UDim2.new(0, 10, 0, 10)
 	colorArea.BorderSizePixel = 0
@@ -970,7 +969,6 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	overlay.Rotation = 90
 
 	local dot = Instance.new("Frame", colorArea)
-	dot.Name = "Dot_" .. tabId
 	dot.Size = UDim2.new(0, 10, 0, 10)
 	dot.AnchorPoint = Vector2.new(0.5, 0.5)
 	dot.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -979,7 +977,7 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 	dot.ZIndex = 10001
 	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
 
-	-- 顏色更新
+	--  拖曳控制
 	local draggingColor = false
 	local hue = 0
 	local function updateColor(x, y)
@@ -991,17 +989,13 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 		if callback then pcall(callback, currentColor) end
 	end
 
-	-- 拖曳選色
-	task.spawn(function()
-		task.wait(0.1)
-		colorArea.InputBegan:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.MouseButton1 then
-				draggingColor = true
-				updateColor(i.Position.X, i.Position.Y)
-			end
-		end)
+	-- 僅允許在 colorArea 拖動顏色，不會拖走整個 Picker
+	colorArea.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+			draggingColor = true
+			updateColor(i.Position.X, i.Position.Y)
+		end
 	end)
-
 	UIS.InputChanged:Connect(function(i)
 		if draggingColor and i.UserInputType == Enum.UserInputType.MouseMovement then
 			updateColor(i.Position.X, i.Position.Y)
@@ -1013,22 +1007,22 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 		end
 	end)
 
-	local dragging, dragOffset
+	local draggingUI, dragOffset
 	picker.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
+		if input.UserInputType == Enum.UserInputType.MouseButton1 and not draggingColor then
+			draggingUI = true
 			dragOffset = Vector2.new(input.Position.X - picker.AbsolutePosition.X, input.Position.Y - picker.AbsolutePosition.Y)
 		end
 	end)
 	UIS.InputChanged:Connect(function(input)
-		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		if draggingUI and input.UserInputType == Enum.UserInputType.MouseMovement then
 			local newPos = Vector2.new(input.Position.X - dragOffset.X, input.Position.Y - dragOffset.Y)
 			picker.Position = UDim2.fromOffset(newPos.X, newPos.Y)
 		end
 	end)
 	UIS.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = false
+			draggingUI = false
 		end
 	end)
 
@@ -1038,7 +1032,7 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 		local screenSize = workspace.CurrentCamera.ViewportSize
 		local pos = colorBox.AbsolutePosition
 		local px = math.clamp(pos.X + 60, 0, screenSize.X - 240)
-		local py = math.clamp(pos.Y, 0, screenSize.Y - 200)
+		local py = math.clamp(pos.Y - 10, 0, screenSize.Y - 200)
 
 		if open then
 			picker.Position = UDim2.fromOffset(px, py)
@@ -1054,8 +1048,8 @@ function SafeUILib:AddTailwindColorPicker(label, defaultColor, callback)
 			task.delay(0.25, function() picker.Visible = false end)
 		end
 	end)
-end
 
+end
 
 function SafeUILib:Notify(text, duration)
 	local TweenService = game:GetService("TweenService")
