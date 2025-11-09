@@ -119,10 +119,11 @@ function SafeUILib:CreateWindow(opts)
 	sbContainer.ScrollBarThickness = 3
 	sbContainer.Parent = sidebar
 
-	local sbList = Instance.new("UIListLayout")
-	sbList.Padding = UDim.new(0, 6)
-	sbList.SortOrder = Enum.SortOrder.LayoutOrder
-	sbList.Parent = sbContainer
+local sbList = Instance.new("UIListLayout")
+sbList.Padding = UDim.new(0, 6)
+sbList.SortOrder = Enum.SortOrder.LayoutOrder
+sbList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+sbList.Parent = sbContainer
 
 	-- Content（右側內容區）
 	local contentCard = Instance.new("Frame")
@@ -548,7 +549,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 		Border = Color3.fromRGB(40, 50, 70),
 		Shadow = Color3.fromRGB(10, 10, 15)
 	}
-
+    
 	-- 標題
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1
@@ -652,20 +653,25 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 		if callback then pcall(callback, currentColor) end
 	end
 
-	-- 開關顏色盤
-	local isOpen = false
-	toggleButton.MouseButton1Click:Connect(function()
-		isOpen = not isOpen
-		if isOpen then
-			local absPos = toggleButton.AbsolutePosition
-			paletteHolder.Position = UDim2.fromOffset(absPos.X + 45, absPos.Y + 30)
-			paletteHolder.Visible = true
-			TweenService:Create(paletteHolder, TweenInfo.new(0.25), {Size = UDim2.new(0, 200, 0, 130)}):Play()
-		else
-			TweenService:Create(paletteHolder, TweenInfo.new(0.25), {Size = UDim2.new(0, 200, 0, 0)}):Play()
-			task.delay(0.25, function() paletteHolder.Visible = false end)
-		end
-	end)
+-- 開關顏色盤
+local isOpen = false
+toggleButton.MouseButton1Click:Connect(function()
+	isOpen = not isOpen
+	if isOpen then
+		local absPos = toggleButton.AbsolutePosition
+		paletteHolder.Position = UDim2.fromOffset(absPos.X + 45, absPos.Y + 35)
+		paletteHolder.Parent = game:GetService("CoreGui")
+		paletteHolder.Visible = true
+		TweenService:Create(paletteHolder, TweenInfo.new(0.25), {Size = UDim2.new(0, 200, 0, 130)}):Play()
+	else
+		TweenService:Create(paletteHolder, TweenInfo.new(0.25), {Size = UDim2.new(0, 200, 0, 0)}):Play()
+		task.delay(0.25, function()
+			paletteHolder.Visible = false
+		end)
+	end
+end)
+
+
 
 	local dragging = false
 	hue.InputBegan:Connect(function(i)
@@ -1336,7 +1342,8 @@ layout.Parent = tabBar
 	button.TextSize = 15
 	button.TextColor3 = Color3.fromRGB(180, 190, 210)
 	button.AutoButtonColor = false
-	button.Parent = self.TabBar
+	button.Parent = self.Sidebar 
+
 
 	local highlight = Instance.new("Frame")
 	highlight.Size = UDim2.new(0, 0, 0, 2)
