@@ -1344,7 +1344,7 @@ function SafeUILib:AddTab(tabName)
 		layout.SortOrder = Enum.SortOrder.LayoutOrder
 		layout.Padding = UDim.new(0, 6)
 		layout.Parent = tabBar
-
+        layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 		self.TabBar = tabBar
 	end
 
