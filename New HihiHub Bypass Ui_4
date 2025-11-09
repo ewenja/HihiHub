@@ -1412,9 +1412,23 @@ function SafeUILib:AddTab(tabName)
 	if not self.DefaultTabSet then
 		self.DefaultTabSet = true
 		task.defer(function()
-			button:Activate()
-		end)
+	if button and button:IsA("TextButton") then
+		for name, tab in pairs(self.Tabs) do
+			tab.Visible = (name == tabName)
+		end
+		for name, btn in pairs(self.TabButtons) do
+			local isActive = (name == tabName)
+			local targetSize = isActive and 80 or 0
+			local targetColor = isActive and Color3.fromRGB(35, 140, 255) or Color3.fromRGB(180, 190, 210)
+			TweenService:Create(btn, TweenInfo.new(0.2), {TextColor3 = targetColor}):Play()
+			local line = btn:FindFirstChildOfClass("Frame")
+			if line then
+				TweenService:Create(line, TweenInfo.new(0.25), {Size = UDim2.new(0, targetSize, 0, 2)}):Play()
+			end
+		end
 	end
+end)
+end
 
 	return setmetatable({
 		Frame = tabFrame,
