@@ -124,6 +124,28 @@ end
 local function removeEsp(player)
     local esp = cache[player]
     if not esp then return end
+    for key, obj in pairs(esp) do
+        if typeof(obj) == "table" then
+            for _, inner in pairs(obj) do
+                if typeof(inner) == "table" then
+                    local drawing = inner[1]
+                    if drawing and drawing.Remove then
+                        drawing:Remove()
+                    end
+                elseif inner and inner.Remove then
+                    inner:Remove()
+                end
+            end
+        elseif obj and obj.Remove then
+            obj:Remove()
+        end
+    end
+
+    cache[player] = nil
+end
+
+    local esp = cache[player]
+    if not esp then return end
 
     for _, drawing in pairs(esp) do
         drawing:Remove()
